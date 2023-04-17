@@ -15,7 +15,7 @@ var connection = mongoose.connect('mongodb://localhost:27017/FYP',
       mongoose.set('strictQuery', true);
       var app = express();
       connection.then((db) => {
-    console.log("Connected correctly to server");
+    console.log("Connected locally correctly to server");
     },
    (err) => {  
       console.log(err); 
