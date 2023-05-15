@@ -1,5 +1,4 @@
 var mongoose = require("mongoose");
-var User = require("../models/user");
 var  StudentSchema = mongoose.Schema({
 userID:{
     type: mongoose.Types.ObjectId,
@@ -10,5 +9,5 @@ userName:{
   required:true
 }
 })
-const Student = mongoose.model("Student", StudentSchema);
-module.exports = Student;
+
+module.exports = mongoose.model("Student", StudentSchema);

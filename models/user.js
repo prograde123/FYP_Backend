@@ -12,7 +12,7 @@ email:{
 },
 password:{
     type:String,
-    required: true
+    required: true,
 },
 role:{
     type: String,
@@ -41,5 +41,5 @@ UserSchema.methods.matchPassword = async function (enteredPassword) {
     const salt = await bcrypt.genSalt(10)
     this.password = await bcrypt.hash(this.password, salt)
   })
-const User = mongoose.model("User", UserSchema);
-module.exports= User;
+  module.exports = mongoose.model("User", UserSchema);
+

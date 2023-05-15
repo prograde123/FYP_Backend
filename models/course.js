@@ -1,54 +1,54 @@
 var mongoose = require("mongoose");
-var Teacher = require("./teacher");
-var Student = require("./student");
 var CourseSchema = mongoose.Schema({
   teacher: {
     type: mongoose.Types.ObjectId,
-    ref: 'Teacher'
+    ref: "Teacher",
   },
   courseCode: {
     type: String,
-    required: true
+    required: true,
   },
   name: {
     type: String,
-    required: true
+    required: true,
   },
   description: {
-    type: String
+    type: String,
   },
   creditHours: {
-    type: Number
+    type: Number,
   },
   language: {
     type: String,
-    required: true
+    required: true,
   },
   startingDate: {
     type: Date,
     required: true,
-    default: Date.now()
+    default: Date.now(),
   },
   endingDate: {
     type: Date,
-    required: true
+    required: true,
   },
   image: {
-    type: Buffer
+    type: String,
+    required: true,
   },
   courseContent: {
     type: [
       {
         lecNo: {
           type: Number,
-          required: true
+          required: true,
         },
         title: {
           type: String,
           required: true,
         },
         file: {
-          type: Buffer,
+          type: String,
+          required: true,
         },
         uploadedDate: {
           type: Date,
@@ -61,8 +61,25 @@ var CourseSchema = mongoose.Schema({
       {
         type: mongoose.Types.ObjectId,
         ref: "Student",
-      }
-    ]
-  }
-})
+      },
+    ],
+  },
+  requests: {
+    type: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "Student",
+      },
+    ],
+  },
+  assignments: {
+    type: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "Assignment",
+      },
+    ],
+  },
+});
+
 module.exports = mongoose.model("Course", CourseSchema);

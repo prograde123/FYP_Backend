@@ -6,7 +6,7 @@ var mongoose = require("mongoose");
 //create a new course
 router.post("/addCourse", async function (req, res) {
   const course = new Course({
-    teacher: req.body.teacherId,
+    teacher: mongoose.Types.ObjectId(req.body.teacher),
     courseCode: req.body.courseCode,
     name: req.body.name,
     description: req.body.description,
@@ -17,6 +17,7 @@ router.post("/addCourse", async function (req, res) {
     image: req.body.image,
     courseContent: [],
     students: [],
+    requests: [],
   });
   try {
     const newCourse = await course.save();
@@ -34,7 +35,8 @@ router.get("/coursesList", async function (req, res) {
       .sort({ name: "desc" })
       .populate("teacher")
       .populate("courseContent")
-      .populate("students");
+      .populate("students")
+      .populate("requests");
     res.json({ courses: coursesList });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -47,7 +49,8 @@ router.get("/viewCourse/:cid", async function (req, res) {
     const course = await Course.findOne({ _id: req.params.cid })
       .populate("teacher")
       .populate("courseContent")
-      .populate("students");
+      .populate("students")
+      .populate("requests");
     res.json(course);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -127,20 +130,18 @@ router.patch("/updateCourseContent/:cid/:mid", async function (req, res) {
   try {
     const courseContentId = req.params.mid;
     const courseId = req.params.cid;
-    const updateCourseContent = await Course.updateOne(
-      { _id: courseId, "courseContent._id": courseContentId },
-      {
-        $push: {
-          courseContent: {
-            lecNo: req.body.lecNo,
-            title: req.body.title,
-            file: req.body.file,
-          },
-        },
-      }
-    );
-    res.json(updateCourseContent);
+    const course = await Course.findOne({
+      _id: courseId,
+      "courseContent._id": courseContentId,
+    });
+    const material = course.courseContent.id(courseContentId);
+    material["lecNo"] = req.body.lecNo;
+    material["title"] = req.body.title;
+
+    await course.save();
+    res.json({ course: course });
   } catch (err) {
+    console.log(err);
     res.send({ message: err });
   }
 });
@@ -166,23 +167,105 @@ router.delete("/deleteCourseContent/:cid/:mid", async function (req, res) {
   }
 });
 
-//add Student (accept student request)
-router.put("/addStudent/:cid", async function (req, res) {
+//teacher accepts student enrollment request
+router.put("/acceptRequest/:cid/:sid", async function (req, res) {
   try {
-    const student = await Course.updateOne(
-      { _id: req.params.cid },
+    const studentId = req.params.sid;
+    const courseId = req.params.cid;
+    const addStudent = await Course.updateOne(
+      { _id: courseId },
       {
-        $push: {
-          students: {
-            student: req.body.studentId,
-          },
+        $pull: {
+          requests: studentId
         },
+        $push: {
+          students: mongoose.Types.ObjectId(studentId),
+        }
       }
     );
-    res.json(student);
+    res.json(addStudent);
   } catch (err) {
     res.send({ message: err });
   }
 });
+
+//decline request of student enrollment
+router.put("/declineRequest/:cid/:sid", async function (req, res) {
+  try {
+    const studentId = req.params.sid;
+    const courseId = req.params.cid;
+    const addStudent = await Course.updateOne(
+      { _id: courseId },
+      {
+        $pull: {
+          requests: studentId
+        }
+      }
+    );
+    res.json(addStudent);
+  } catch (err) {
+    res.send({ message: err });
+  }
+});
+
+//View all enrollment requests
+router.get("/viewRequests/:cid", async function (req, res) {
+  try {
+    const enrollmentRequests = await Course.findOne({ _id: req.params.cid })
+      .populate("requests");
+    res.json(enrollmentRequests);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+//student sending request to teacher
+router.put("/sendRequest/:cid/:sid", async function (req, res) {
+  try {
+    const studentId = req.params.sid;
+    const courseId = req.params.cid;
+    const enrollment = await Course.updateOne(
+      { _id: courseId },
+      {
+        $push: { requests: mongoose.Types.ObjectId(studentId) },
+      }
+    );
+    res.json(enrollment);
+  } catch (err) {
+    res.send({ message: err });
+  }
+});
+
+//view enrolled student of specific course
+router.get("/viewAllStudents/:cid", async function (req, res) {
+  try {
+    const enrollmentRequests = await Course.findOne({ _id: req.params.cid })
+      .populate("students")
+    res.json(enrollmentRequests);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+//remove enrolled student from any specific course
+router.put("/removeStudent/:cid/:sid", async function (req, res) {
+  try {
+    const studentId = req.params.sid;
+    const courseId = req.params.cid;
+    const delStudent = await Course.updateOne(
+      { _id: courseId },
+      {
+        $pull: {
+          students: studentId
+        }
+      }
+    );
+    res.json(delStudent);
+  } catch (err) {
+    res.send({ message: err });
+  }
+});
+
+//download course content
 
 module.exports = router;
