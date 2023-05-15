@@ -1,14 +1,17 @@
 var mongoose = require("mongoose");
-var User = require("../models/user");
-var  TeacherSchema = mongoose.Schema({
-userID: {
+var TeacherSchema = mongoose.Schema({
+  userID: {
     type: mongoose.Types.ObjectId,
-    ref: 'User'
-},
-cv:{
+    ref: "User",
+  },
+  cv: {
     type: String,
-    required : true
-}
-})
-const Teacher = mongoose.model("Teacher", TeacherSchema);
-module.exports = Teacher;
+    required: true,
+  },
+  approved: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+module.exports = mongoose.model("Teacher", TeacherSchema);
