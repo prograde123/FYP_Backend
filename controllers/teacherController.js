@@ -2,16 +2,22 @@ var Teacher = require('../models/teacher')
 var AsyncHandler = require("express-async-handler");
 var generateToken = require("../Utills/generateToken")
 // Register User
+
 const registerTeacher = AsyncHandler(
     async(req, res, next)=>{
        const {userID,cv} = req.body
     
-       const newTeacher = await Teacher.create({userID,cv})
-      
+       const newTeacher = new Teacher({ user:userID,
+        cv: cv
+      });
+      await newTeacher.save();
+      const teacherID = newTeacher._id;
+
+
         if(newTeacher){
         res.status(201).json({
-            
-            userID : newTeacher.userID,
+            id: teacherID,
+            userID : newTeacher.user,
             cv : newTeacher.cv
         })
             }
