@@ -1,6 +1,7 @@
 var User = require("../models/user");
 var AsyncHandler = require("express-async-handler");
 var generateToken = require("../Utills/generateToken")
+var Teacher = require('../models/teacher')
 // Register User
 const registerUser = AsyncHandler(
     async(req, res, next)=>{
@@ -42,6 +43,8 @@ const signinUser = AsyncHandler(
         }
         else{
             if(await userExist.matchPassword(password)){
+                var userid = userExist._id
+                const teacher = await Teacher.findOne({ userid}).exec();
                 res.json({
                     _id : userExist._id,
                     fullName : userExist.fullName,
@@ -49,6 +52,9 @@ const signinUser = AsyncHandler(
                     profilePic : userExist.profilePic,
                     email : userExist.email,
                     role: userExist.role,
+                    teacherID: teacher._id,
+                    teachercv:teacher.cv,
+                    IsApproved:teacher.approved,
                     //token generate
                     token : generateToken(userExist._id)
                 })

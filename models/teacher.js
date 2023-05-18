@@ -1,8 +1,8 @@
 var mongoose = require("mongoose");
 var TeacherSchema = mongoose.Schema({
-  userID: {
+  user: {
     type: mongoose.Types.ObjectId,
-    ref: "User",
+    ref: "User"
   },
   cv: {
     type: String,
