@@ -45,7 +45,8 @@ const signinUser = AsyncHandler(
                 res.json({
                     _id : userExist._id,
                     fullName : userExist.fullName,
-                
+                    phoneNum : userExist.phoneNum,
+                    profilePic : userExist.profilePic,
                     email : userExist.email,
                     role: userExist.role,
                     //token generate
