@@ -18,6 +18,7 @@ router.post("/addCourse", async function (req, res) {
     courseContent: [],
     students: [],
     requests: [],
+    assignments:[]
   });
   try {
     const newCourse = await course.save();
