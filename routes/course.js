@@ -1,6 +1,7 @@
 var express = require("express");
 var router = express.Router();
 const Course = require("../models/course");
+const Assignment = require('../models/assignment')
 var mongoose = require("mongoose");
 
 //create a new course
@@ -18,7 +19,7 @@ router.post("/addCourse", async function (req, res) {
     courseContent: [],
     students: [],
     requests: [],
-    assignments:[]
+    assignments: [],
   });
   try {
     const newCourse = await course.save();
@@ -35,11 +36,14 @@ router.get("/coursesList", async function (req, res) {
     const coursesList = await Course.find()
       .sort({ name: "desc" })
       .populate("teacher")
+      .populate('teacher.user')
       .populate("courseContent")
       .populate("students")
-      .populate("requests");
+      .populate("requests")
+      .populate("assignments");
     res.json({ courses: coursesList });
   } catch (err) {
+    console.log(err)
     res.status(500).json({ message: err.message });
   }
 });
@@ -51,7 +55,9 @@ router.get("/viewCourse/:cid", async function (req, res) {
       .populate("teacher")
       .populate("courseContent")
       .populate("students")
-      .populate("requests");
+      .populate("requests")
+      .populate("assignments");
+
     res.json(course);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -117,7 +123,7 @@ router.put("/addCourseContent/:cid", async function (req, res) {
 });
 
 //view course content list
-router.get("/viewCourseContent/:cid", async function (req, res) {
+router.get("/viewCourseContentList/:cid", async function (req, res) {
   try {
     const courseContent = await Course.findOne({ _id: req.params.cid });
     res.json(courseContent);
@@ -177,11 +183,11 @@ router.put("/acceptRequest/:cid/:sid", async function (req, res) {
       { _id: courseId },
       {
         $pull: {
-          requests: studentId
+          requests: studentId,
         },
         $push: {
           students: mongoose.Types.ObjectId(studentId),
-        }
+        },
       }
     );
     res.json(addStudent);
@@ -199,8 +205,8 @@ router.put("/declineRequest/:cid/:sid", async function (req, res) {
       { _id: courseId },
       {
         $pull: {
-          requests: studentId
-        }
+          requests: studentId,
+        },
       }
     );
     res.json(addStudent);
@@ -212,8 +218,9 @@ router.put("/declineRequest/:cid/:sid", async function (req, res) {
 //View all enrollment requests
 router.get("/viewRequests/:cid", async function (req, res) {
   try {
-    const enrollmentRequests = await Course.findOne({ _id: req.params.cid })
-      .populate("requests");
+    const enrollmentRequests = await Course.findOne({
+      _id: req.params.cid,
+    }).populate("requests");
     res.json(enrollmentRequests);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -240,8 +247,9 @@ router.put("/sendRequest/:cid/:sid", async function (req, res) {
 //view enrolled student of specific course
 router.get("/viewAllStudents/:cid", async function (req, res) {
   try {
-    const enrollmentRequests = await Course.findOne({ _id: req.params.cid })
-      .populate("students")
+    const enrollmentRequests = await Course.findOne({
+      _id: req.params.cid,
+    }).populate("students");
     res.json(enrollmentRequests);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -257,8 +265,8 @@ router.put("/removeStudent/:cid/:sid", async function (req, res) {
       { _id: courseId },
       {
         $pull: {
-          students: studentId
-        }
+          students: studentId,
+        },
       }
     );
     res.json(delStudent);
