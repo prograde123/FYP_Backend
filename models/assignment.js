@@ -1,6 +1,6 @@
 var mongoose = require("mongoose");
 const AssignmentSchema = new Schema({
-  assignmentID: {
+  assignmentNumber: {
     type: Number,
     required: true,
   },

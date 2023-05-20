@@ -19,6 +19,7 @@ const registerUser = AsyncHandler(async (req, res, next) => {
     role,
     phoneNum,
     profilePic,
+    
   });
 
   if (newUser) {

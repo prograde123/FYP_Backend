@@ -75,8 +75,10 @@ var CourseSchema = mongoose.Schema({
   assignments: {
     type: [
       {
-        type: mongoose.Types.ObjectId,
-        ref: "Assignment",
+        assignmentID: {
+          type: mongoose.Types.ObjectId,
+          ref: "Assignment",
+        },
       },
     ],
   },

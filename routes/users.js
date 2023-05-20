@@ -17,3 +17,4 @@ router.get('/ViewProfile',auth,ProfileController.getProfie);
 router.post('/UpdateProfile',auth,ProfileController.updateProfile)
 
 module.exports = router;
+
