@@ -4,13 +4,13 @@ var generateToken = require("../Utills/generateToken");
 var Teacher = require("../models/teacher");
 var Assignment = require('../models/assignment');
 var Course= require("../models/course");
-const assignment = require("../models/assignment");
+
 const { response } = require("express");
 
 
 const addAssignment= AsyncHandler(async(req,res,next)=>{
-    const {assignmentNumber,title,description,uploadDate,dueDate,totalMarks,assignmentFile} = req.body;
-    const assig = new Assignment({assignmentNumber,title,description,uploadDate,dueDate,totalMarks,assignmentFile});
+    const {assignmentNumber,description,uploadDate,dueDate,totalMarks,assignmentFile,format} = req.body;
+    const assig = new Assignment({assignmentNumber,description,uploadDate,dueDate,totalMarks,assignmentFile,format});
     const assignmentID = assig._id
     assig.save((err, data) => {
         if (err) {
@@ -22,7 +22,7 @@ const addAssignment= AsyncHandler(async(req,res,next)=>{
         const courseid = req.body.courseid;
         Course.updateOne(
           { _id: courseid },
-          { $push: { assignments: assignmentID } },
+          { $push: { assignments: { _id: assignmentID } } },
           (err, data) => {
             if (err) {
               res.statusCode = 504
@@ -32,7 +32,7 @@ const addAssignment= AsyncHandler(async(req,res,next)=>{
             
           }
         );
-        res.json({ success: "Assignment successfully uploaded!" });
+        res.json({ success: `Assignment successfully uploaded! ${assignmentID}` });
       });
 }
 
@@ -106,20 +106,15 @@ const deleteAssignment = AsyncHandler(async(req, res, next) => {
 
 const viewAssignmentList = AsyncHandler(
   async(req,res,next) => {
-    const courseid = req.body
-    const course = await Course.findById(courseid).populate({
-      path:'assignments.assignmentID',
-      model:'Assignment'
-    })
-
-    const assignments = course.assignments.map(
-      (assignment)=>{
-        assignment.assignmentID
-      }
-    )
-    res.status(200).json({
-      assignmentList:assignments
-    })
+    const course = await Course.findOne({ _id: req.params.cid })
+    .populate("assignments");
+  var assignments = []
+  for(i = 0 ; i < course.assignments.length ; i++){
+        const assig = await Assignment.findOne({_id: course.assignments[i]._id})
+       assignments.push(assig)
+    }
+    res.json(assignments);
+    
 
   }
 )

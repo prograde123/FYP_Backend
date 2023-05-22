@@ -5,10 +5,6 @@ const AssignmentSchema = new Schema({
     type: Number,
     required: true,
   },
-  title: {
-    type: String,
-    required: true,
-  },
   description: {
     type: String,
     required: true,
@@ -26,6 +22,10 @@ const AssignmentSchema = new Schema({
     required: true,
   },
   assignmentFile: {
+    type: String,
+    required: true,
+  },
+  format: {
     type: String,
     required: true,
   },

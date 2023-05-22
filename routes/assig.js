@@ -8,7 +8,7 @@ router.get('/', function(req, res, next) {
 router.post('/addAssignment',assigController.addAssignment);
 router.delete('/deleteAssignment' , assigController.deleteAssignment)
 router.put('/editAssignment', assigController.editAssignment)
-router.get('/viewAssigList', assigController.viewAssignmentList)
+router.get('/viewAssigList/:cid', assigController.viewAssignmentList)
 router.get('/viewAssignment',assigController.viewAssignment)
 router.get('/submiitedAssigList',assigController.viewSubmittedList)
 
