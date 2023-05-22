@@ -35,8 +35,12 @@ router.get("/coursesList", async function (req, res) {
   try {
     const coursesList = await Course.find()
       .sort({ name: "desc" })
-      .populate("teacher")
-      .populate('teacher.user')
+      .populate({
+        path : 'teacher',
+        populate : {
+          path : 'user'
+        }
+    })
       .populate("courseContent")
       .populate("students")
       .populate("requests")
@@ -110,7 +114,8 @@ router.put("/addCourseContent/:cid", async function (req, res) {
           courseContent: {
             lecNo: req.body.lecNo,
             title: req.body.title,
-            file: req.body.file,
+            fileType: req.body.fileType,
+            file:req.body.file,
             uploadedDate: req.body.uploadedDate,
           },
         },
@@ -125,7 +130,8 @@ router.put("/addCourseContent/:cid", async function (req, res) {
 //view course content list
 router.get("/viewCourseContentList/:cid", async function (req, res) {
   try {
-    const courseContent = await Course.findOne({ _id: req.params.cid });
+    const courseContent = await Course.findOne({ _id: req.params.cid }).populate("courseContent");
+    console.log(courseContent)
     res.json(courseContent);
   } catch (err) {
     res.status(500).json({ message: err.message });
