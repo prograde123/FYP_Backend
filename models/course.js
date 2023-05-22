@@ -46,12 +46,17 @@ var CourseSchema = mongoose.Schema({
           type: String,
           required: true,
         },
-        file: {
+        fileType: {
+          type: String,
+          required: true,
+        },
+        file:{
           type: String,
           required: true,
         },
         uploadedDate: {
           type: Date,
+          default: Date.now(),
         },
       },
     ],
