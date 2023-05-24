@@ -1,7 +1,7 @@
 var express = require("express");
 var router = express.Router();
 const Course = require("../models/course");
-const Assignment = require('../models/assignment')
+const Assignment = require("../models/assignment");
 var mongoose = require("mongoose");
 
 //create a new course
@@ -31,23 +31,23 @@ router.post("/addCourse", async function (req, res) {
 });
 
 //view courses list
-router.get("/coursesList", async function (req, res) {
+router.get("/coursesList/:tid", async function (req, res) {
   try {
-    const coursesList = await Course.find()
+    const coursesList = await Course.find({ teacher: req.params.tid })
       .sort({ name: "desc" })
       .populate({
-        path : 'teacher',
-        populate : {
-          path : 'user'
-        }
-    })
+        path: "teacher",
+        populate: {
+          path: "user",
+        },
+      })
       .populate("courseContent")
       .populate("students")
       .populate("requests")
       .populate("assignments");
     res.json({ courses: coursesList });
   } catch (err) {
-    console.log(err)
+    console.log(err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -71,19 +71,18 @@ router.get("/viewCourse/:cid", async function (req, res) {
 //edit a specific course
 router.patch("/updateCourse/:cid", async function (req, res) {
   try {
+    console.log(req.body);
     const updatedCourse = await Course.updateOne(
       { _id: req.params.cid },
       {
-        $set: {
-          courseCode: req.body.courseCode,
-          name: req.body.name,
-          description: req.body.description,
-          creditHours: req.body.creditHours,
-          language: req.body.language,
-          startingDate: req.body.startingDate,
-          endingDate: req.body.endingDate,
-          image: req.body.image,
-        },
+        courseCode: req.body.courseCode,
+        name: req.body.name,
+        description: req.body.description,
+        creditHours: req.body.creditHours,
+        language: req.body.language,
+        startingDate: req.body.startingDate,
+        endingDate: req.body.endingDate,
+        image: req.body.image,
       }
     );
     res.json(updatedCourse);
@@ -115,7 +114,7 @@ router.put("/addCourseContent/:cid", async function (req, res) {
             lecNo: req.body.lecNo,
             title: req.body.title,
             fileType: req.body.fileType,
-            file:req.body.file,
+            file: req.body.file,
             uploadedDate: req.body.uploadedDate,
           },
         },
@@ -130,9 +129,11 @@ router.put("/addCourseContent/:cid", async function (req, res) {
 //view course content list
 router.get("/viewCourseContentList/:cid", async function (req, res) {
   try {
-    const courseContent = await Course.findOne({ _id: req.params.cid }).populate("courseContent");
-    console.log(courseContent)
-    res.json(courseContent);
+    const courseContent = await Course.findOne({
+      _id: req.params.cid,
+    }).populate("courseContent");
+    console.log(courseContent);
+    res.json({ courseContent: courseContent.courseContent });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -150,6 +151,8 @@ router.patch("/updateCourseContent/:cid/:mid", async function (req, res) {
     const material = course.courseContent.id(courseContentId);
     material["lecNo"] = req.body.lecNo;
     material["title"] = req.body.title;
+    material["fileType"] = req.body.fileType;
+    material["file"] = req.body.file;
 
     await course.save();
     res.json({ course: course });
