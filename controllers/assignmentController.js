@@ -41,27 +41,29 @@ const addAssignment= AsyncHandler(async(req,res,next)=>{
 
 const editAssignment = AsyncHandler(async(req,res,next)=>{
   
-  const {assigId,assignmentNumber,title,description,uploadDate,dueDate,totalMarks,assignmentFile} = req.body;
-  const assignment= await Assignment.findById(assigId)
+  const {assigId,assignmentNumber,description,uploadDate,dueDate,totalMarks,assignmentFile,format} = req.body;
+  //const assignment= await Assignment.findById(assigId)
+  try{
+  const assignment = await Assignment.updateOne(
+    {_id : assigId},
+    {
+      assignmentNumber : assignmentNumber ,
 
-  if(assignment){
-    assignment.assignmentNumber = assignmentNumber ||  assignment.assignmentNumber
-    assignment.title = title || assignment.title
-    assignment.description = description || assignment.description
-    assignment.uploadDate = uploadDate || assignment.uploadDate
-    assignment.dueDate = dueDate || assignment.dueDate
-    assignment.totalMarks = totalMarks || assignment.totalMarks
-    assignment.assignmentFile = assignmentFile || assignment.assignmentFile
 
-    const updatedOne = await Assignment.save()
-  res.status(200).json({
-    success: 'updated successfully!'
-  })
+    description : description ,
+    uploadDate : uploadDate ,
+    dueDate : dueDate ,
+    totalMarks : totalMarks ,
+    assignmentFile : assignmentFile ,
+   format : format 
+
+    }
+  )
+    
+    res.json({ success: `Assignment successfully updated! ` });
   }
-
-  else{
-    response.status(404)
-    throw new Error('Not updated')
+  catch(err) {
+    res.send({ message: err });
   }
 })
 const deleteAssignment = AsyncHandler(async(req, res, next) => {
@@ -113,7 +115,7 @@ const deleteAssignment = AsyncHandler(async(req, res, next) => {
 
 const viewAssignmentList = AsyncHandler(
   async(req,res,next) => {
-    console.log('here')
+
     const course = await Course.findOne({ _id: req.params.cid })
     .populate("assignments");
   var assignments = []
@@ -121,7 +123,7 @@ const viewAssignmentList = AsyncHandler(
         const assig = await Assignment.findOne({_id: course.assignments[i]._id})
        assignments.push(assig)
     }
-    console.log(assignments)
+
     res.json({assignments: assignments});
     
 
