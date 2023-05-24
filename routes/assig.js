@@ -6,10 +6,10 @@ router.get('/', function(req, res, next) {
   });
 
 router.post('/addAssignment',assigController.addAssignment);
-router.delete('/deleteAssignment' , assigController.deleteAssignment)
+router.delete('/deleteAssignment/:cid/:aid' , assigController.deleteAssignment)
 router.put('/editAssignment', assigController.editAssignment)
 router.get('/viewAssigList/:cid', assigController.viewAssignmentList)
-router.get('/viewAssignment',assigController.viewAssignment)
+router.get('/viewAssignment/:aid',assigController.viewAssignment)
 router.get('/submiitedAssigList',assigController.viewSubmittedList)
 
 
