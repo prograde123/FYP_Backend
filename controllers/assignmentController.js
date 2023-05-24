@@ -4,6 +4,7 @@ var generateToken = require("../Utills/generateToken");
 var Teacher = require("../models/teacher");
 var Assignment = require('../models/assignment');
 var Course= require("../models/course");
+const { Types } = require('mongoose');
 
 const { response } = require("express");
 
@@ -64,13 +65,19 @@ const editAssignment = AsyncHandler(async(req,res,next)=>{
   }
 })
 const deleteAssignment = AsyncHandler(async(req, res, next) => {
-    const assignmentid = req.body;
-    const courseid = req.body;
-    await Course.updateOne(
+    const assignmentid = req.params.aid;
+    const courseid = req.params.cid;
+    if (!Types.ObjectId.isValid(courseid)) {
+      res.status(400).json({ error: 'Invalid courseid' });
+      return;
+    }
+    Course.updateOne(
       { _id: courseid },
       {
         $pull: {
-          assignments: { assignmentID: assignmentid },
+         // assignments: { assignmentID: assignmentid },
+            assignments: { _id: assignmentid } ,
+
         },
       },
       (err, result) => {
@@ -106,6 +113,7 @@ const deleteAssignment = AsyncHandler(async(req, res, next) => {
 
 const viewAssignmentList = AsyncHandler(
   async(req,res,next) => {
+    console.log('here')
     const course = await Course.findOne({ _id: req.params.cid })
     .populate("assignments");
   var assignments = []
@@ -113,7 +121,8 @@ const viewAssignmentList = AsyncHandler(
         const assig = await Assignment.findOne({_id: course.assignments[i]._id})
        assignments.push(assig)
     }
-    res.json(assignments);
+    console.log(assignments)
+    res.json({assignments: assignments});
     
 
   }
@@ -121,8 +130,8 @@ const viewAssignmentList = AsyncHandler(
 
 const viewAssignment = AsyncHandler(
   async(req,res,next)=>{
-    const Assignmentid= req.body
-    const viewOne = await Assignment.findById(Assignmentid)
+    
+    const viewOne = await Assignment.findById(req.params.aid)
 
     res.status(200).json({
       Viewassignment:viewOne
