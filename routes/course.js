@@ -284,6 +284,6 @@ router.put("/removeStudent/:cid/:sid", async function (req, res) {
   }
 });
 
-//download course content
+//download course contents
 
 module.exports = router;
