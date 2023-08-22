@@ -21,27 +21,15 @@ const AssignmentSchema = new Schema({
     type: Number,
     required: true,
   },
-  assignmentFile: {
-    type: String,
-    required: true,
-  },
   format: {
     type: String,
     required: true,
   },
-  testCases: {
+  questions: {
     type: [
       {
         type: mongoose.Types.ObjectId,
-        ref: "TestCase",
-      },
-    ],
-  },
-  submittedAssignment: {
-    type: [
-      {
-        type: mongoose.Types.ObjectId,
-        ref: "Submission",
+        ref: "Question",
       },
     ],
   },

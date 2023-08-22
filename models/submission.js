@@ -28,7 +28,7 @@ const SubmissionSchema = new Schema({
     type: Number,
     required: true,
   },
-  feedback: {
+  feedback: { //display the testcases results as passed and failed to user
     type: String,
     required: true,
   },
