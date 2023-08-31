@@ -1,26 +1,40 @@
 var User = require("../models/user");
 var Teacher = require ("../models/teacher");
 var AsyncHandler = require("express-async-handler");
+var student = require("../models/student");
+
 const getProfie = AsyncHandler(
     async(req,res,next)=>{
+        console.log("in gEt profile")
         const data = await User.findById(req.user._id)
+        console.log(data)
         if(data){
             if(data.role == "Teacher"){
-                const teacherData = await Teacher.find({userID: data._id})
+                const teacherData = await Teacher.findOne({user: data._id})
 
             res.json({
                 _id : data._id,
                 fullName : data.fullName,              
                 email : data.email,
                 role: data.role,
-                phoneNum : data.phoneNum,
+               
                 profilePic : data.profilePic,
                 cv: teacherData.cv
             })
             }
             else{
                 //for student profile
-                res.status(201)
+                const studentData = await student.findOne({userID: data._id})
+                console.log(studentData)
+                res.json({
+                    _id : data._id,
+                    fullName : data.fullName,              
+                    email : data.email,
+                    role: data.role,
+                   
+                    profilePic : data.profilePic,
+                    userName: studentData.userName
+                })
             }
         }
         else{
@@ -30,61 +44,81 @@ const getProfie = AsyncHandler(
         }
     }
 )
-const updateProfile= AsyncHandler(
-    async(res,req,next)=>{
-        const findData = User.findById(req.user._id)
-        if(findData){
-            findData.fullName = req.body.fullName || findData.fullName
-            findData.email = req.body.email || findData.email       
-            findData.role = findData.role
-            findData.phoneNum = req.body.phoneNum || findData.phoneNum
-            findData.profilePic = req.body.profilePic || findData.profilePic
+const updateProfile = AsyncHandler(async (req, res, next) => {
+    try {
+        const { id, userName, fullName, email, role,  profilePic, cv } = req.body;
 
-            const saveUser = await findData.save()
-            if(findData.role == "Teacher"){
-            const find = await Teacher.find({userID: findData._id})
-            if(find){
-                find.cv = req.body.cv || find.cv
-            }
-            const saveTeacher = await find.save()
+        const findData = await User.findById(id);
 
-            res.json({
-                _id : saveUser._id,
-                fullName : saveUser.fullName,              
-                email : saveUser.email,
-                role: saveUser.role,
-                phoneNum : saveUser.phoneNum,
-                profilePic : saveUser.profilePic,
-                cv: saveTeacher.cv
+        if (findData) {
+            const userData = {
+                fullName: fullName || findData.fullName,
+                email: email || findData.email,
+                role: role || findData.role,
+             
+                profilePic: profilePic || findData.profilePic
+            };
+
+            console.log(userData);
+
+            const updatedUser = await User.findByIdAndUpdate(
+                id,
+                { $set: userData },
+                { new: true }
+            );
+
+            let cvData = null;
+            let studentUserName = null;
+
+            if (findData.role === "Teacher") {
+                const teacher = await Teacher.findOne({ user: findData._id });
             
-                })
-            }
+                if (teacher) {
+                    cvData = cv || teacher.cv;
+                    await Teacher.updateOne({ user: findData._id }, { $set: { cv: cvData } });
 
-         else{
-                //student
-                //     const find = await Student.find({userID: findData._id})
-                //     if(find){
-                //         student
-                //     }
-                //     const savestudent = await find.save()
-        
-             res.json({
-                id : saveUser._id,
-                fullName : saveUser.fullName,              
-                email : saveUser.email,
-                role: saveUser.role,
-                phoneNum : saveUser.phoneNum,
-                profilePic : saveUser.profilePic,
-                 //Student attribut specific
-                    
-                })
-
+                    res.json({
+                        _id: updatedUser._id,
+                        fullName: updatedUser.fullName,
+                        email: updatedUser.email,
+                        role: updatedUser.role,
+                        
+                        profilePic: updatedUser.profilePic,
+                        cv: cvData
+                    });
+                }
+            } else {
+                const studentData = await student.findOne({ userID: findData._id });
+            
+                if (studentData) {
+                    studentUserName = userName || studentData.userName;
+                    await student.updateOne({ userID: findData._id }, { $set: { userName: studentUserName } });
+                    res.json({
+                        _id: updatedUser._id,
+                        fullName: updatedUser.fullName,
+                        email: updatedUser.email,
+                        role: updatedUser.role,
+                       
+                        profilePic: updatedUser.profilePic,
+                        userName: studentUserName
+                    });
+                }
             }
-                
-                
+            
+
+           
+        } else {
+            res.status(404).json({ message: "User Not Found" });
         }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: "Internal Server Error"
+        });
     }
-)
+});
+
 module.exports = {
     getProfie,
     updateProfile
