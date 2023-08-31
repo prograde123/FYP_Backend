@@ -21,6 +21,12 @@ const QuestionSchema = new Schema({
     type: mongoose.Types.ObjectId,
     ref: "Submission",
   },
+  isInputArray: {
+    type:Boolean,
+    required: true,
+    default: false,
+
+  }
 });
 
 module.exports = mongoose.model("Question", QuestionSchema);

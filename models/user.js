@@ -18,10 +18,6 @@ role:{
     type: String,
     required: true
 },
-phoneNum:{
-    type: String,
-    required : true
-},
 profilePic:{
     type: String
 }
