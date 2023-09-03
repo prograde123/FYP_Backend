@@ -2,6 +2,7 @@ var express = require("express");
 var router = express.Router();
 const Course = require("../models/course");
 const Assignment = require("../models/assignment");
+const User = require("../models/user")
 var mongoose = require("mongoose");
 
 //create a new course
@@ -224,17 +225,29 @@ router.put("/declineRequest/:cid/:sid", async function (req, res) {
   }
 });
 
-//View all enrollment requests
+//View all enrollment requests of any specific course
 router.get("/viewRequests/:cid", async function (req, res) {
   try {
     const enrollmentRequests = await Course.findOne({
       _id: req.params.cid,
     }).populate("requests");
+    console.log(enrollmentRequests);
+    res.json({ requests: enrollmentRequests.requests });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+//View enrollement request of all courses
+router.get("/viewAllRequests", async function (req, res) {
+  try {
+    const enrollmentRequests = await Course.find().populate("requests");
     res.json(enrollmentRequests);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
+
 
 //student sending request to teacher
 router.put("/sendRequest/:cid/:sid", async function (req, res) {
@@ -285,5 +298,75 @@ router.put("/removeStudent/:cid/:sid", async function (req, res) {
 });
 
 //download course contents
+
+
+// STUDENT ROUTES
+
+//view all available courses
+router.get("/ViewAllAvailableCourses", async function (req, res) {
+  try {
+    const coursesList = await Course.find()
+      .sort({ name: "desc" })
+      .populate({
+        path: "teacher",
+        populate: {
+          path: "user",
+        },
+      })
+      .populate("courseContent")
+      .populate("students")
+    res.json({ courses: coursesList });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+//view student courses list
+router.get("/studentCoursesList/:sid", async function (req, res) {
+  try {
+    const coursesList = await Course.find({ students: req.params.sid })
+      .populate({
+        path: "students",
+        populate: {
+          path: "user",
+        },
+      })
+      .populate("courseContent")
+      .populate("students")
+      .populate("assignments")
+      .populate({
+        path: "teacher",
+        populate: {
+          path: "user",
+        },
+      })
+    res.json({ courses: coursesList });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.get("/CourseDetails/:cid", async function (req, res) {
+  try {
+    const course = await Course.findOne({ _id: req.params.cid })
+      .populate({
+        path: "teacher",
+        populate: {
+          path: "user",
+        },
+      })
+      .populate("courseContent")
+      .populate("students")
+      .populate("assignments");
+
+    res.json(course);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
 
 module.exports = router;
