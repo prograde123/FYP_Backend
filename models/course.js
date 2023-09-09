@@ -76,17 +76,7 @@ var CourseSchema = mongoose.Schema({
         ref: "Student",
       },
     ],
-  },
-  assignments: {
-    type: [
-      {
-        assignmentID: {
-          type: mongoose.Types.ObjectId,
-          ref: "Assignment",
-        },
-      },
-    ],
-  },
+  }
 });
 
 module.exports = mongoose.model("Course", CourseSchema);
