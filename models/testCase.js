@@ -1,14 +1,16 @@
 var mongoose = require("mongoose");
+
+const Schema = mongoose.Schema;
 const TestCasesSchema = new Schema({
-  testCaseID: {
-    type: Number,
-    required: true,
+  Question:{
+    type: mongoose.Types.ObjectId,
+    ref: 'Question'
   },
   input: {
     type: String,
     required: true,
   },
-  expectedOutput: {
+  output: {
     type: String,
     required: true,
   },

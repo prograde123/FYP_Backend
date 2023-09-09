@@ -4,37 +4,42 @@ var generateToken = require("../Utills/generateToken");
 var Teacher = require("../models/teacher");
 var Assignment = require('../models/assignment');
 var Course= require("../models/course");
+var TestCase = require("../models/testCase")
 const { Types } = require('mongoose');
+const Question = require("../models/question");
 
 const { response } = require("express");
 
 
 const addAssignment= AsyncHandler(async(req,res,next)=>{
-    const {assignmentNumber,description,uploadDate,dueDate,totalMarks,assignmentFile,format} = req.body;
-    const assig = new Assignment({assignmentNumber,description,uploadDate,dueDate,totalMarks,assignmentFile,format});
-    const assignmentID = assig._id
-    assig.save((err, data) => {
-        if (err) {
-          res.statusCode = 504
-          res.json({ error: err });
-          return;
-        }
-        console.log(data)
-        const courseid = req.body.courseid;
-        Course.updateOne(
-          { _id: courseid },
-          { $push: { assignments: { _id: assignmentID } } },
-          (err, data) => {
-            if (err) {
-              res.statusCode = 504
-              res.json({ error: err });
-              return;
-            }
-            
-          }
-        );
-        res.json({ success: `Assignment successfully uploaded! ${assignmentID}` });
-      });
+    const {questions,assig} = req.body;
+   try {
+     const assignment = await Assignment.create(
+       assig
+     )
+     
+     questions.map(async (quest)=>{
+       const question = await Question.create({
+         Assignment : assignment._id ,
+         questionDescription :  quest.questionDescription ,
+         questionTotalMarks : quest.questionTotalMarks ,
+         isInputArray : quest.isInputArray ,
+       })
+       
+       quest.testCases.map(async (testCases) => {
+           const testCase = await TestCase.create({
+             Question: question._id,
+             ...testCases
+           })
+           
+       })
+     })
+     
+     
+     res.status(200).json({success: true})
+   } catch (error) {
+    res.json({success: false})
+   }
 }
 
 )
@@ -116,15 +121,13 @@ const deleteAssignment = AsyncHandler(async(req, res, next) => {
 const viewAssignmentList = AsyncHandler(
   async(req,res,next) => {
 
-    const course = await Course.findOne({ _id: req.params.cid })
-    .populate("assignments");
-  var assignments = []
-  for(i = 0 ; i < course.assignments.length ; i++){
-        const assig = await Assignment.findOne({_id: course.assignments[i]._id})
-       assignments.push(assig)
-    }
+  try {
+      const assig = await Assignment.find({   CourseID: req.params.cid });
 
-    res.json({assignments: assignments});
+      res.json({assignments: assig});
+  } catch (error) {
+    console.error(error);
+  }
     
 
   }

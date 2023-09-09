@@ -1,6 +1,10 @@
 var mongoose = require("mongoose");
 const Schema = mongoose.Schema
 const AssignmentSchema = new Schema({
+  CourseID:{
+    type:mongoose.Types.ObjectId,
+    ref:'Course'
+  },
   assignmentNumber: {
     type: Number,
     required: true,
@@ -25,14 +29,12 @@ const AssignmentSchema = new Schema({
     type: String,
     required: true,
   },
-  questions: {
-    type: [
-      {
-        type: mongoose.Types.ObjectId,
-        ref: "Question",
-      },
-    ],
-  },
+  noOfQuestions: {
+    type: Number,
+    required: true,
+  }
+
+ 
 });
 
 module.exports = mongoose.model("Assignment", AssignmentSchema);
