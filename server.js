@@ -12,6 +12,8 @@ var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
 var courseRouter= require("./routes/course")
 var assigRouter = require("./routes/assig")
+var submitRouter = require("./routes/submit")
+
 
 const dburl = 'mongodb+srv://ProGrade123:ProGrade123@fyp.fni3swa.mongodb.net/?retryWrites=true&w=majority';
 mongoose.connect(dburl)
@@ -33,7 +35,7 @@ app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/course",courseRouter);
 app.use("/assignment",assigRouter);
-
+app.use("/submit",submitRouter);
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
   next(createError(404));
