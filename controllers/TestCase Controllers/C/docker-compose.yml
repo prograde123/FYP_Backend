@@ -1,0 +1,9 @@
+version: '3'
+services:
+  ccomp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./app:/app
+    command: ["tail", "-f", "/dev/null"]
