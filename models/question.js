@@ -13,10 +13,6 @@ const QuestionSchema = new Schema({
     type: Number,
     required: true,
   },
-  submissionFile: {
-    type: mongoose.Types.ObjectId,
-    ref: "Submission",
-  },
   isInputArray: {
     type:Boolean,
     required: true,
