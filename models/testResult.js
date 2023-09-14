@@ -1,5 +1,6 @@
 var mongoose = require("mongoose");
-const TestResultSchema = new Schema({
+
+const TestResultSchema =mongoose.Schema({
   testCase: {
     type: mongoose.Types.ObjectId,
     ref: "TestCase",
@@ -7,6 +8,10 @@ const TestResultSchema = new Schema({
   actualOutput: {
     type: String,
     required: true,
+  },
+  errorOutput: {
+    type: String,
+    default: '',
   },
   passed: {
     type: Boolean,

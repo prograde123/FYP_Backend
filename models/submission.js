@@ -1,5 +1,9 @@
 var mongoose = require("mongoose");
-const SubmissionSchema = new Schema({
+const SubmissionSchema = mongoose.Schema({
+  question:{
+    type: mongoose.Types.ObjectId,
+    ref: "Question",
+  },
   student: {
     type: mongoose.Types.ObjectId,
     ref: "Student",
@@ -26,11 +30,7 @@ const SubmissionSchema = new Schema({
   },
   obtainedMarks: {
     type: Number,
-    required: true,
-  },
-  feedback: { //display the testcases results as passed and failed to user
-    type: String,
-    required: true,
+    default:0
   },
 });
 
