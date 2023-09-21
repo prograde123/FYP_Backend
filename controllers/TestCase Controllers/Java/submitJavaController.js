@@ -23,10 +23,12 @@ var storage = multer.diskStorage({
 
 var upload = multer({ storage: storage }).array("files", 12);
 
+
 async function createSubmission(results, req, res) {
   console.log(results);
   const submissionData = {
-    //student: req.user._id,  //add here student ID
+    question : req.params.qid,
+    student: req.user._id,  //add here student ID
     submittedDate: new Date(),
     codeFile: req.files[0].originalname,
     testResults: results,
@@ -49,7 +51,6 @@ const uploadJava = async (req, res, next) => {
 
   const testCases = await testCase.find({ Question: question });
   const ques = await questionModel.findOne({ _id: question });
-  console.log(testCases);
 
   upload(req, res, function (err) {
     if (err) {
@@ -57,7 +58,8 @@ const uploadJava = async (req, res, next) => {
     }
 
     //after middleware
-    // const StudentId = req.user._id
+    //  const StudentId = req.user._id
+    //  console.log(StudentId)
 
     req.files.forEach((file) => {
       fs.readFile(file.path, "utf-8", (err, data) => {
@@ -65,7 +67,7 @@ const uploadJava = async (req, res, next) => {
           console.error(`Error reading the file ${file.path}`);
         } else {
           console.log(`Content of the file ${file.originalname}:`);
-          console.log(data);
+         // console.log(data);
         }
       });
     });
@@ -93,6 +95,7 @@ const uploadJava = async (req, res, next) => {
 
       dockerExec.stdout.on("data", (data) => {
         actualOutput += data.toString();
+        console.log(actualOutput)
       });
 
       dockerExec.stderr.on("data", (data) => {
