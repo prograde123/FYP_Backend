@@ -7,7 +7,7 @@ const TestCasesSchema = new Schema({
     ref: 'Question'
   },
   input: {
-    type: String,
+    type: Schema.Types.Mixed,
     required: true,
   },
   output: {
