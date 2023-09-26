@@ -8,20 +8,32 @@ const question = require("../models/question");
 const testResult = require("../models/testResult");
 
 const Submission = AsyncHandler(async (req, res, next) => {
-    const student = req.user._id;
-  
-    try {
-      const getSubmission = await submission.find({ student: student });
-      if (getSubmission.length > 0) {
-        res.json({ success: true });
-      } else {
-        res.json({ success: false });
-      }
-    } catch (error) {
-      console.error("Error fetching submissions:", error);
-      res.status(500).json({ error: "Internal Server Error" });
+  const student = req.user._id;
+  const assignmentId = req.params.aid;
+
+  try {
+    const getquestions = await question.find({ Assignment: assignmentId });
+    
+    const promises = getquestions.map(async (ques) => {
+      const getSubmission = await submission.find({ student: student, question: ques._id });
+      return getSubmission.length > 0;
+    });
+
+    const results = await Promise.all(promises);
+    
+    const submitted = results.some((hasSubmission) => hasSubmission);
+
+    if (submitted) {
+      res.json({ success: true });
+    } else {
+      res.json({ success: false });
     }
-  });
+  } catch (error) {
+    console.error("Error fetching submissions:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 
   const getSubmission = AsyncHandler(async (req, res, next) => {
     const student = req.user._id;
@@ -51,6 +63,8 @@ const Submission = AsyncHandler(async (req, res, next) => {
   
         const submissionData = {
           questionDescription: questionData.questionDescription,
+          TotalMarks : questionData.questionTotalMarks,
+          ObtainedMarks : submission.obtainedMarks,
           testResults: testResults,
         };
   

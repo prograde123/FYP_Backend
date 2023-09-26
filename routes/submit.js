@@ -11,7 +11,7 @@ router.post('/Java/:qid',auth,JavaController.uploadJava);
 router.post('/Python/:qid',auth,PythonController.uploadPython);
 router.post('/C/:qid' , auth,CController.uploadC )
 router.post('/Cpp/:qid' ,auth, CppController.uploadCpp )
-router.get('/isSubmitted' ,auth, SubmitCheckController.Submission  )
+router.get('/isSubmitted/:aid' ,auth, SubmitCheckController.Submission  )
 router.get('/getSubmissions' ,auth ,SubmitCheckController.getSubmission )
 
 module.exports = router;
