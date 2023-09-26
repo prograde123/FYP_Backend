@@ -24,16 +24,15 @@ var storage = multer.diskStorage({
 var upload = multer({ storage: storage }).array("files", 12);
 
 
-async function createSubmission(results, req, res) {
-  console.log(results);
+async function createSubmission(results, req, res,obtainedMarks) {
+  
   const submissionData = {
     question : req.params.qid,
     student: req.user._id,  //add here student ID
     submittedDate: new Date(),
     codeFile: req.files[0].originalname,
     testResults: results,
-    // plagairismReport:
-    //obtainedMarks:
+    obtainedMarks:obtainedMarks
   };
 
   const submission = new Submission(submissionData);
@@ -52,14 +51,16 @@ const uploadJava = async (req, res, next) => {
   const testCases = await testCase.find({ Question: question });
   const ques = await questionModel.findOne({ _id: question });
 
+  const eachTestCaseMarks =
+    parseFloat(ques.questionTotalMarks) / parseFloat(testCases.length);
+
   upload(req, res, function (err) {
     if (err) {
       return res.end("Something went wrong :(");
     }
 
-    //after middleware
-    //  const StudentId = req.user._id
-    //  console.log(StudentId)
+    
+    let obtainedMarks = 0;
 
     req.files.forEach((file) => {
       fs.readFile(file.path, "utf-8", (err, data) => {
@@ -67,7 +68,7 @@ const uploadJava = async (req, res, next) => {
           console.error(`Error reading the file ${file.path}`);
         } else {
           console.log(`Content of the file ${file.originalname}:`);
-         // console.log(data);
+          // console.log(data);
         }
       });
     });
@@ -77,7 +78,7 @@ const uploadJava = async (req, res, next) => {
 
     function runTestCase(index) {
       if (index >= testCases.length) {
-        createSubmission(results, req, res);
+        createSubmission(results, req, res, obtainedMarks); 
         return;
       }
 
@@ -95,7 +96,7 @@ const uploadJava = async (req, res, next) => {
 
       dockerExec.stdout.on("data", (data) => {
         actualOutput += data.toString();
-        console.log(actualOutput)
+        console.log(actualOutput);
       });
 
       dockerExec.stderr.on("data", (data) => {
@@ -113,11 +114,18 @@ const uploadJava = async (req, res, next) => {
             actualOutput.trim() === testCase.output.trim() &&
             errorOutput.trim() === "",
         };
+
         const testResult = new testCaseResult(result);
         try {
           testResult.save();
-          results.push(testResult._id); // Storing the ObjectId in the results array
-          // res.json({testResult})
+          results.push(testResult._id); 
+
+          
+          if (testResult.passed) {
+            obtainedMarks += eachTestCaseMarks;
+          }
+
+          
           runTestCase(index + 1);
         } catch (error) {
           console.error(`Error saving TestResult: ${error}`);
@@ -139,5 +147,6 @@ const uploadJava = async (req, res, next) => {
     runTestCase(0);
   });
 };
+
 
 module.exports = { uploadJava };
