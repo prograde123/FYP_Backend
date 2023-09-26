@@ -1,8 +1,8 @@
 var express = require("express");
 var router = express.Router();
 const Course = require("../models/course");
-const Assignment = require("../models/assignment");
 const User = require("../models/user")
+const Student = require("../models/student")
 var mongoose = require("mongoose");
 
 //create a new course
@@ -20,7 +20,6 @@ router.post("/addCourse", async function (req, res) {
     courseContent: [],
     students: [],
     requests: [],
-    assignments: [],
   });
   try {
     const newCourse = await course.save();
@@ -45,7 +44,6 @@ router.get("/coursesList/:tid", async function (req, res) {
       .populate("courseContent")
       .populate("students")
       .populate("requests")
-      .populate("assignments");
     res.json({ courses: coursesList });
   } catch (err) {
     console.log(err);
@@ -61,7 +59,6 @@ router.get("/viewCourse/:cid", async function (req, res) {
       .populate("courseContent")
       .populate("students")
       .populate("requests")
-      .populate("assignments");
 
     res.json(course);
   } catch (err) {
@@ -300,12 +297,33 @@ router.put("/removeStudent/:cid/:sid", async function (req, res) {
 //download course contents
 
 
+
+
+
+
+
+
+
+
 // STUDENT ROUTES
 
-//view all available courses
-router.get("/ViewAllAvailableCourses", async function (req, res) {
+//view all available courses for enrollement
+router.get("/ViewAllAvailableCourses/:studentId", async function (req, res) {
   try {
-    const coursesList = await Course.find()
+    const studentId = req.params.studentId;
+
+    // Find the student by ID
+    const student = await Student.findById(studentId);
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    // Find courses where the student's ObjectId is not in the 'students' array
+    const availableCourses = await Course.find({
+      "students": { $nin: [student._id] },
+      "requests": { $nin: [student._id] }
+    })
       .sort({ name: "desc" })
       .populate({
         path: "teacher",
@@ -314,13 +332,15 @@ router.get("/ViewAllAvailableCourses", async function (req, res) {
         },
       })
       .populate("courseContent")
-      .populate("students")
-    res.json({ courses: coursesList });
+      .populate("students");
+
+    res.json({ courses: availableCourses });
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: err.message });
   }
 });
+
 
 //view student courses list
 router.get("/studentCoursesList/:sid", async function (req, res) {
@@ -334,7 +354,6 @@ router.get("/studentCoursesList/:sid", async function (req, res) {
       })
       .populate("courseContent")
       .populate("students")
-      .populate("assignments")
       .populate({
         path: "teacher",
         populate: {
@@ -359,7 +378,6 @@ router.get("/CourseDetails/:cid", async function (req, res) {
       })
       .populate("courseContent")
       .populate("students")
-      .populate("assignments");
 
     res.json(course);
   } catch (err) {
