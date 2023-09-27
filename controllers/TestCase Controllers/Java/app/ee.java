@@ -10,7 +10,7 @@ public class HelloWorld {
 
        
 
-        System.out.println("prime");
+        System.out.println("z");
  	
         scanner.close();
     }
