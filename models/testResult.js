@@ -7,7 +7,7 @@ const TestResultSchema =mongoose.Schema({
   },
   actualOutput: {
     type: String,
-    required: true,
+    default: '',
   },
   errorOutput: {
     type: String,
