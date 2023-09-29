@@ -1,12 +1,14 @@
-var createError = require("http-errors");
-var express = require("express");
-var path = require("path");
-var cookieParser = require("cookie-parser");
-var logger = require("morgan");
-var mongoose = require("mongoose");
-var cors = require('cors')
+const createError = require("http-errors");
+const express = require("express");
+const path = require("path");
+const cookieParser = require("cookie-parser");
+const logger = require("morgan");
+const mongoose = require("mongoose");
+const cors = require('cors');
+const { exec } = require('child_process'); 
 
-const app=express();
+const app = express();
+
 
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
@@ -14,11 +16,9 @@ var courseRouter= require("./routes/course")
 var assigRouter = require("./routes/assig")
 var submitRouter = require("./routes/submit")
 
-
 const dburl = 'mongodb+srv://ProGrade123:ProGrade123@fyp.fni3swa.mongodb.net/?retryWrites=true&w=majority';
 mongoose.connect(dburl)
 console.log("connected")
-
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
@@ -33,9 +33,10 @@ app.use(cors());
 
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
-app.use("/course",courseRouter);
-app.use("/assignment",assigRouter);
-app.use("/submit",submitRouter);
+app.use("/course", courseRouter);
+app.use("/assignment", assigRouter);
+app.use("/submit", submitRouter);
+
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
   next(createError(404));
@@ -52,5 +53,24 @@ app.use(function (err, req, res, next) {
   res.render("error");
 });
 
-module.exports = app;
+const directoriesToRunCommand = [
+                                  './controllers/TestCase Controllers/Java',
+                                  './controllers/TestCase Controllers/Python',
+                                  './controllers/TestCase Controllers/C',
+                                  './controllers/TestCase Controllers/Cpp'
+                                ]; 
+directoriesToRunCommand.forEach((directory) => {
+  exec('docker-compose up', { cwd: directory }, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Error: ${error.message}`);
+      return;
+    }
+    if (stderr) {
+      console.error(`stderr: ${stderr}`);
+      return;
+    }
+    console.log(`stdout for directory ${directory}: ${stdout}`);
+  });
+});
 
+module.exports = app;
