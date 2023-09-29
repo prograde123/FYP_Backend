@@ -9,7 +9,7 @@ public class ArraySum {
        
         // Read user input and store it in the array
         for (int i = 0; i < 4; i++) {
-            System.out.print("");
+            System.out.print("Enter number: ");
             numbers[i] = scanner.nextInt();
         }
 

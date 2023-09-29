@@ -26,15 +26,16 @@ var storage = multer.diskStorage({
 
 var upload = multer({ storage: storage }).array("files", 12);
 
-async function createSubmission(results, req, res) {
+async function createSubmission(results, req, res, obtainedMarks) {
   console.log(results)
     const submissionData = {
-        //student: req.user._id,  //add here student ID
+        question: req.params.qid,
+        student: req.user._id,  
         submittedDate: new Date(),
         codeFile: req.files[0].originalname,
-        testResults: results
-        // plagairismReport:
-        //obtainedMarks:
+        testResults: results,
+        
+        obtainedMarks: obtainedMarks
     };
 
     const submission = new Submission(submissionData);
@@ -52,15 +53,15 @@ const uploadPython = async (req, res, next) => {
 
   const testCases = await testCase.find({ Question: question });
   const ques = await questionModel.findOne({ _id: question });
-  console.log(testCases);
+  const eachTestCaseMarks =
+    parseFloat(ques.questionTotalMarks) / parseFloat(testCases.length);
 
   upload(req, res, function (err) {
     if (err) {
       return res.end("Something went wrong :(");
     }
 
-    //after middleware
-    // const StudentId = req.user._id
+    let obtainedMarks = 0;
 
     req.files.forEach((file) => {
       fs.readFile(file.path, "utf-8", (err, data) => {
@@ -78,7 +79,7 @@ const uploadPython = async (req, res, next) => {
 
     function runTestCase(index) {
       if (index >= testCases.length) {
-        createSubmission(results, req, res); 
+        createSubmission(results, req, res,obtainedMarks); 
         return;
       }
 
@@ -118,6 +119,9 @@ const uploadPython = async (req, res, next) => {
           testResult.save();
           results.push(testResult._id); // Storing the ObjectId in the results array
           // res.json({testResult})
+          if (testResult.passed) {
+            obtainedMarks += eachTestCaseMarks;
+          }
           runTestCase(index + 1);
         } catch (error) {
           console.error(`Error saving TestResult: ${error}`);
