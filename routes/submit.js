@@ -11,7 +11,16 @@ router.post('/Java/:qid',auth,JavaController.uploadJava);
 router.post('/Python/:qid',auth,PythonController.uploadPython);
 router.post('/C/:qid' , auth,CController.uploadC )
 router.post('/Cpp/:qid' ,auth, CppController.uploadCpp )
+
 router.get('/isSubmitted/:aid' ,auth, SubmitCheckController.Submission  )
 router.get('/getSubmissions' ,auth ,SubmitCheckController.getSubmission )
+
+
+
+//Get output from files
+router.post('/getOutputPython/:testCases/:isInputArray' ,  auth , PythonController.getOutputPython)
+router.post('/getOutputJava/:testCases/:isInputArray' , auth , JavaController.getOutputJava)
+router.post('/getOutputC/:testCases/:isInputArray' ,  auth , CController.getOutputC)
+router.post('/getOutputCpp/:testCases/:isInputArray' , auth , CppController.getOutputCpp)
 
 module.exports = router;

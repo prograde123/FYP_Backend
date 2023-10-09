@@ -143,4 +143,114 @@ const uploadC = async (req, res, next) => {
   });
 };
 
-module.exports = { uploadC };
+const getOutputC = async (req, res, next) => {
+
+
+ 
+  const testCasesString = req.params.testCases;
+  const isInputArray = req.params.isInputArray;
+  const isArr = JSON.parse(isInputArray);
+  
+  let testCases;
+  
+  if (isArr) {
+    testCases = JSON.parse(testCasesString);
+    console.log("testCases", testCases);
+  } else {
+    testCases = JSON.parse(testCasesString);
+  }
+
+
+  upload(req, res, function (err) {
+    if (err) {
+      return res.end("Something went wrong :(");
+    }
+
+    req.files.forEach((file) => {
+      fs.readFile(file.path, "utf-8", (err, data) => {
+        if (err) {
+          console.error(`Error reading the file ${file.path}`);
+        } else {
+          console.log(`Content of the file ${file.originalname}:`);
+          //console.log(data);
+        }
+      });
+    });
+
+    var codeFilePath = req.files[0].originalname;
+
+    const OutputArray = []
+    function runTestCase(index) {
+      
+      if (testCases.length <= index) {
+
+        let inputOutputArray = []
+
+
+        for(i=0;i<testCases.length ; i++){
+          inputOutputArray.push({
+            input : testCases[i].input,
+            output : OutputArray[i]
+          })
+        }
+
+        console.log("inputOutput Array is : " , inputOutputArray)
+    
+        
+        res.send(inputOutputArray);
+    
+        return;
+      }
+    const testCase = testCases[index].input;
+
+    console.log("TEst CASE input " , testCase)
+
+
+    const dockerExec = spawn("docker", [
+      "exec",
+      "-i",
+      "c-ccomp-1",
+      "sh",
+      "-c",
+      `gcc -o myprogram ${req.files[0].originalname} && ./myprogram`,
+    ]);
+
+      let actualOutput = "";
+      let errorOutput = "";
+
+      dockerExec.stdout.on("data", (data) => {
+        actualOutput += data.toString();
+        OutputArray.push(actualOutput.split('\n')[0])
+        console.log(OutputArray)
+      });
+
+      dockerExec.stderr.on("data", (data) => {
+        errorOutput += data.toString();
+      });
+
+      dockerExec.on("close", (code) => {
+
+        
+        runTestCase(index + 1);
+     
+      });
+
+
+
+      if (isArr) {
+        console.log("i am here in true when input array is   " , isInputArray)
+        const inputBuffer = Buffer.from(testCase.map(String).join("\n"));
+        dockerExec.stdin.write(inputBuffer);
+        
+      } else {
+        dockerExec.stdin.write(testCase.replace(",", "\n"));
+       
+      }
+      dockerExec.stdin.end();
+    }
+
+    runTestCase(0);
+  });
+};
+
+module.exports = { uploadC , getOutputC };
