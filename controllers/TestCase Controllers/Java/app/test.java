@@ -1,6 +1,6 @@
 import java.util.Scanner;
 
-public class ArraySum {
+public class test {
     public static void main(String[] args) {
         int[] numbers = new int[4]; // Create an array of size 4
         int sum = 0;
