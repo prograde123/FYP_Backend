@@ -21,6 +21,10 @@ const AssignmentSchema = new Schema({
     type: Date,
     required: true,
   },
+  dueTime:{
+    type: Date,
+    requied: true
+  },
   totalMarks: {
     type: Number,
     required: true,

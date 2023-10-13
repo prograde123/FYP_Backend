@@ -14,6 +14,8 @@ router.post('/Cpp/:qid' ,auth, CppController.uploadCpp )
 
 router.get('/isSubmitted/:aid' ,auth, SubmitCheckController.Submission  )
 router.get('/getSubmissions' ,auth ,SubmitCheckController.getSubmission )
+router.get('/AssignmentSubmissions/:aid' , SubmitCheckController.allAssignmentSubmissions)
+router.get('/GetGrades/:cid' , auth , SubmitCheckController.getGrades )
 
 
 
