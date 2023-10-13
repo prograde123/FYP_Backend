@@ -10,42 +10,57 @@ const Question = require("../models/question");
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
 
-const { response } = require("express");
 const question = require("../models/question");
 
 
-const addAssignment= AsyncHandler(async(req,res,next)=>{
-    const {questions,assig} = req.body;
-   try {
-     const assignment = await Assignment.create(
-       assig
-     )
-     
-     questions.map(async (quest)=>{
-       const question = await Question.create({
-         Assignment : assignment._id ,
-         questionDescription :  quest.questionDescription ,
-         questionTotalMarks : quest.questionTotalMarks ,
-         isInputArray : quest.isInputArray ,
-       })
-       
-       quest.testCases.map(async (testCases) => {
-           const testCase = await TestCase.create({
-             Question: question._id,
-             ...testCases
-           })
-           
-       })
-     })
-     
-     
-     res.status(200).json({success: true})
-   } catch (error) {
-    res.json({success: false})
-   }
-}
+const addAssignment = AsyncHandler(async (req, res, next) => {
+  const { questions, assig } = req.body;
 
-)
+  // Parse the dueTime from the frontend as a JavaScript Date object
+  const dueTime = new Date(assig.dueTime);
+
+  const data = {
+    CourseID: assig.CourseID,
+    assignmentNumber: assig.assignmentNumber,
+    description: assig.description,
+    uploadDate: new Date(assig.uploadDate),
+    dueDate: new Date(assig.dueDate),
+    dueTime: dueTime, // Use the parsed date directly
+    totalMarks: assig.totalMarks,
+    format: assig.format,
+    noOfQuestions: assig.noOfQuestions,
+  };
+
+  try {
+    const assignment = await Assignment.create(data);
+
+    console.log("Assignment created:", assignment);
+
+    questions.map(async (quest) => {
+      const question = await Question.create({
+        Assignment: assignment._id,
+        questionDescription: quest.questionDescription,
+        questionTotalMarks: quest.questionTotalMarks,
+        isInputArray: quest.isInputArray,
+      });
+
+      quest.testCases.map(async (testCases) => {
+        const testCase = await TestCase.create({
+          Question: question._id,
+          ...testCases,
+        });
+      });
+    });
+
+    console.log("Created assignment ID:", assignment._id);
+
+    res.send({ success: true });
+  } catch (error) {
+    console.log("Error:", error);
+    res.send({ success: false });
+  }
+});
+
 
 const editAssignment = AsyncHandler(async(req,res,next)=>{
   
@@ -136,7 +151,7 @@ const viewAssignmentList = AsyncHandler(
   }
 )
 
-const viewAssignment = AsyncHandler(async (req, res, next) => {
+/*const viewAssignment = AsyncHandler(async (req, res, next) => {
   const assignmentId = req.params.aid;
 
   try {
@@ -145,6 +160,30 @@ const viewAssignment = AsyncHandler(async (req, res, next) => {
     
 
     const questions = await question.find({Assignment : assignmentId})
+
+
+    const testcasesWithQuestions = [];
+
+    const getTestCases = async (question) => {
+      const findTestCase = await TestCase.find({ Question: question._id });
+      return findTestCase;
+    };
+    
+    const updateTestCases = async () => {
+      for (const question of questions) {
+        const testCases = await getTestCases(question);
+        const questionWithTestCases = {
+          ...question,
+          testCases: testCases,
+        };
+        testcasesWithQuestions.push(questionWithTestCases);
+      }
+
+    };
+    
+    updateTestCases();
+    
+    
    
     if (!assignment) {
       return res.status(404).json({ error: 'Assignment not found' });
@@ -170,13 +209,18 @@ const viewAssignment = AsyncHandler(async (req, res, next) => {
     pdfDoc.on('end', () => {
   
       const pdfDataUrl = Buffer.concat(pdfBuffer).toString('base64');
+
+      console.log(testcasesWithQuestions)
       
       const jsonResponse = {
         Viewassignment: assignment,
         PdfDataUrl: `data:application/pdf;base64,${pdfDataUrl}`, 
-        Viewquestions : questions
+        Viewquestions : questions,
+        TestCase : testcasesWithQuestions
 
       };
+
+      console.log(jsonResponse)
 
 
       res.status(200).json(jsonResponse);
@@ -187,7 +231,64 @@ const viewAssignment = AsyncHandler(async (req, res, next) => {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
   }
+});*/
+const viewAssignment = AsyncHandler(async (req, res, next) => {
+  const assignmentId = req.params.aid;
+
+  try {
+    const assignment = await Assignment.findById(assignmentId);
+    const questions = await question.find({ Assignment: assignmentId });
+
+    const getTestCases = async (question) => {
+      return await TestCase.find({ Question: question._id });
+    };
+
+    const testcasesWithQuestions = await Promise.all(
+      questions.map(async (question) => {
+        const testCases = await getTestCases(question);
+        return { ...question, testCases };
+      })
+    );
+
+    if (!assignment) {
+      return res.status(404).json({ error: 'Assignment not found' });
+    }
+
+    const pdfDoc = new PDFDocument();
+    pdfDoc.font('Helvetica-Bold').fontSize(25).text(`Assignment Number : ${assignment.assignmentNumber}`, { align: 'center', bold: true });
+    pdfDoc.fontSize(15).text(`Total Marks : ${assignment.totalMarks.toString()}`, { align: 'right', bold: true });
+
+    for (let x = 0; x < questions.length; x++) {
+      pdfDoc.fontSize(13).text(`Question : ${x + 1}`, {
+        underline: true,
+      });
+      pdfDoc.fontSize(13).text(`  ${questions[x].questionDescription} `);
+      pdfDoc.fontSize(11).text(`( ${questions[x].questionTotalMarks.toString() } ) `, { align: 'right' });
+    }
+
+    const pdfBuffer = [];
+    pdfDoc.on('data', (chunk) => pdfBuffer.push(chunk));
+    pdfDoc.on('end', () => {
+      const pdfDataUrl = Buffer.concat(pdfBuffer).toString('base64');
+
+
+      console.log(testcasesWithQuestions)
+      const jsonResponse = {
+        Viewassignment: assignment,
+        PdfDataUrl: `data:application/pdf;base64,${pdfDataUrl}`,
+        Viewquestions: questions,
+        TestCase: testcasesWithQuestions,
+      };
+
+      res.status(200).json(jsonResponse);
+    });
+    pdfDoc.end();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
+
 module.exports = {
   viewAssignment,deleteAssignment,addAssignment,editAssignment,viewAssignmentList,viewSubmittedList
 }
