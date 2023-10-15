@@ -29,7 +29,6 @@ var storage = multer.diskStorage({
 var upload = multer({ storage: storage }).array("files", 12);
 
 async function createSubmission(results, req, res, obtainedMarks) {
-  console.log(results)
     const submissionData = {
         question: req.params.qid,
         student: req.user._id,  

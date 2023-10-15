@@ -15,13 +15,16 @@ const Submission = AsyncHandler(async (req, res, next) => {
   try {
     const getquestions = await question.find({ Assignment: assignmentId });
     
+    console.log(getquestions)
     const promises = getquestions.map(async (ques) => {
       const getSubmission = await submission.find({ student: student, question: ques._id });
+      console.log(getSubmission)
       return getSubmission.length > 0;
     });
 
     const results = await Promise.all(promises);
     
+    console.log(results)
     const submitted = results.some((hasSubmission) => hasSubmission);
 
     if (submitted) {
@@ -44,23 +47,28 @@ const Submission = AsyncHandler(async (req, res, next) => {
       const questions = await question.find({
         Assignment: assignmentId,
       });
+
+     
   
       const questionIds = questions.map((q) => q._id);
   
+      
       const submissions = await submission.find({
         student: student,
         question: { $in: questionIds },
       });
+
   
+     
      
       const formattedResponse = [];
   
       for (const submission of submissions) {
-        const questionData = question.find((q) => q._id.equals(submission.question));
-  
+        const questionData =   questions.find((q) => q._id.equals(submission.question));
         const testResults = await testResult.find({
           _id: { $in: submission.testResults },
         });
+
   
         const submissionData = {
           questionDescription: questionData.questionDescription,
@@ -68,7 +76,6 @@ const Submission = AsyncHandler(async (req, res, next) => {
           ObtainedMarks : submission.obtainedMarks,
           testResults: testResults,
         };
-  
         formattedResponse.push(submissionData);
       }
   
