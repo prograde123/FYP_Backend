@@ -68,7 +68,7 @@ const uploadJava = async (req, res, next) => {
           console.error(`Error reading the file ${file.path}`);
         } else {
           console.log(`Content of the file ${file.originalname}:`);
-          console.log(data);
+         // console.log(data);
         }
       });
     });
@@ -78,7 +78,6 @@ const uploadJava = async (req, res, next) => {
 
     function runTestCase(index) {
       if (index >= testCases.length) {
-        console.log(results)
         createSubmission(results, req, res, obtainedMarks); 
         return;
       }
@@ -97,7 +96,6 @@ const uploadJava = async (req, res, next) => {
 
       dockerExec.stdout.on("data", (data) => {
         actualOutput += data.toString();
-        console.log(actualOutput);
       });
 
       dockerExec.stderr.on("data", (data) => {
@@ -161,7 +159,6 @@ const getOutputJava = async (req, res, next) => {
   
   if (isArr) {
     testCases = JSON.parse(testCasesString);
-    console.log("testCases", testCases);
   } else {
     testCases = JSON.parse(testCasesString);
   }
@@ -201,7 +198,6 @@ const getOutputJava = async (req, res, next) => {
           })
         }
 
-        console.log("inputOutput Array is : " , inputOutputArray)
     
         
         res.send(inputOutputArray);
@@ -210,7 +206,6 @@ const getOutputJava = async (req, res, next) => {
       }
     const testCase = testCases[index].input;
 
-    console.log("TEst CASE input " , testCase)
 
 
     const dockerExec = spawn("docker", [
@@ -227,7 +222,6 @@ const getOutputJava = async (req, res, next) => {
       dockerExec.stdout.on("data", (data) => {
         actualOutput += data.toString();
         OutputArray.push(actualOutput.split('\n')[0])
-        console.log(OutputArray)
       });
 
       dockerExec.stderr.on("data", (data) => {
@@ -245,7 +239,6 @@ const getOutputJava = async (req, res, next) => {
 
 
       if (isArr) {
-        console.log("i am here in true when input array is   " , isInputArray)
         const inputBuffer = Buffer.from(testCase.map(String).join("\n"));
         dockerExec.stdin.write(inputBuffer);
         

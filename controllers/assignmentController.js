@@ -34,7 +34,6 @@ const addAssignment = AsyncHandler(async (req, res, next) => {
   try {
     const assignment = await Assignment.create(data);
 
-    console.log("Assignment created:", assignment);
 
     questions.map(async (quest) => {
       const question = await Question.create({
@@ -52,7 +51,6 @@ const addAssignment = AsyncHandler(async (req, res, next) => {
       });
     });
 
-    console.log("Created assignment ID:", assignment._id);
 
     res.send({ success: true });
   } catch (error) {
@@ -272,7 +270,7 @@ const viewAssignment = AsyncHandler(async (req, res, next) => {
       const pdfDataUrl = Buffer.concat(pdfBuffer).toString('base64');
 
 
-      console.log(testcasesWithQuestions)
+     
       const jsonResponse = {
         Viewassignment: assignment,
         PdfDataUrl: `data:application/pdf;base64,${pdfDataUrl}`,
