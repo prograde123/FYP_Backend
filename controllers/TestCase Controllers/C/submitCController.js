@@ -77,10 +77,10 @@ const uploadC = async (req, res, next) => {
 
     function runTestCase(index) {
       if (index >= testCases.length) {
-        createSubmission(results, req, res,obtainedMarks);
+        createSubmission(results, req, res, obtainedMarks);
         return;
       }
-
+    
       const testCase = testCases[index];
       const dockerExec = spawn("docker", [
         "exec",
@@ -90,35 +90,52 @@ const uploadC = async (req, res, next) => {
         "-c",
         `gcc -o myprogram ${req.files[0].originalname} && ./myprogram`,
       ]);
-
-      let actualOutput = "";
+    
+      let actualOutput = ""; // Store the entire output as a single string
       let errorOutput = "";
-
+    
       dockerExec.stdout.on("data", (data) => {
         actualOutput += data.toString();
       });
-
+    
       dockerExec.stderr.on("data", (data) => {
         errorOutput += data.toString();
       });
-
+    
       dockerExec.on("close", (code) => {
+        const expectedOutputLines = testCase.output.split("\n"); // Split expected output into lines
+        const actualOutputLines = actualOutput.split("\n"); // Split actual output into lines
+    
+        // Remove empty lines from the actual output
+        const cleanedActualOutputLines = actualOutputLines.filter((line) => line.trim() !== "");
+    
+        let passed = errorOutput.trim() === "" && 
+          expectedOutputLines.length === cleanedActualOutputLines.length;
+    
+        if (passed) {
+          for (let i = 0; i < expectedOutputLines.length; i++) {
+            if (expectedOutputLines[i].trim() !== cleanedActualOutputLines[i].trim()) {
+              passed = false;
+              break;
+            }
+          }
+        }
+    
         const result = {
           testCase: testCase._id,
           input: testCase.input,
           output: testCase.output,
           actualOutput: actualOutput,
           errorOutput: errorOutput,
-          passed:
-            actualOutput.trim() === testCase.output.trim() &&
-            errorOutput.trim() === "",
+          passed: passed,
         };
+    
         const testResult = new testCaseResult(result);
         try {
           testResult.save();
           results.push(testResult._id); // Storing the ObjectId in the results array
-          // res.json({testResult})
-          if (testResult.passed) {
+    
+          if (passed) {
             obtainedMarks += eachTestCaseMarks;
           }
           runTestCase(index + 1);
@@ -126,9 +143,9 @@ const uploadC = async (req, res, next) => {
           console.error(`Error saving TestResult: ${error}`);
         }
       });
-
+    
       const isInputArray = ques.isInputArray;
-
+    
       if (isInputArray) {
         const inputBuffer = Buffer.from(testCase.input.map(String).join("\n"));
         dockerExec.stdin.write(inputBuffer);
@@ -138,10 +155,13 @@ const uploadC = async (req, res, next) => {
         dockerExec.stdin.end();
       }
     }
+    
 
     runTestCase(0);
   });
 };
+
+
 
 const getOutputC = async (req, res, next) => {
 
