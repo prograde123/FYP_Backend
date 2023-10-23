@@ -35,8 +35,7 @@ async function createSubmission(results, req, res, obtainedMarks) {
         submittedDate: new Date(),
         codeFile: req.files[0].originalname,
         testResults: results,
-        
-        obtainedMarks: obtainedMarks
+        obtainedMarks: Math.round(obtainedMarks,2)
     };
 
     const submission = new Submission(submissionData);
@@ -105,6 +104,8 @@ const uploadPython = async (req, res, next) => {
       });
 
       dockerExec.on("close", (code) => {
+        console.log(testCase.output)
+        console.log(actualOutput)
         const result = {
           testCase: testCase._id,
           input: testCase.input,

@@ -7,7 +7,10 @@ const submission = require("../models/submission");
 const question = require("../models/question");
 const testResult = require("../models/testResult");
 const assignment = require("../models/assignment");
-
+const testCase = require("../models/testCase");
+function shouldHideContent(testResult) {
+  return Math.random() < 0.5;
+}
 const Submission = AsyncHandler(async (req, res, next) => {
   const student = req.user._id;
   const assignmentId = req.params.aid;
@@ -59,25 +62,50 @@ const Submission = AsyncHandler(async (req, res, next) => {
       });
 
   
+  
      
      
       const formattedResponse = [];
-  
+      
       for (const submission of submissions) {
-        const questionData =   questions.find((q) => q._id.equals(submission.question));
-        const testResults = await testResult.find({
-          _id: { $in: submission.testResults },
+        const questionData = questions.find((q) => q._id.equals(submission.question));
+        const testResults = await testResult
+          .find({
+            _id: { $in: submission.testResults },
+          })
+          .populate('testCase')
+          .lean();
+      
+        const totalTestCases = testResults.length;
+        const halfCount = Math.ceil(totalTestCases / 2); // Half of the test cases
+      
+        // Shuffle the test cases randomly
+        const shuffledTestResults = testResults.slice();
+        for (let i = shuffledTestResults.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffledTestResults[i], shuffledTestResults[j]] = [shuffledTestResults[j], shuffledTestResults[i]];
+        }
+      
+        // Mark the first half as shown and the second half as hidden
+        const testResultsModified = shuffledTestResults.map((tr, index) => {
+          return {
+            ...tr,
+            isHidden: index >= halfCount,
+          };
         });
-
-  
+      
+        console.log(testResultsModified);
+      
         const submissionData = {
           questionDescription: questionData.questionDescription,
-          TotalMarks : questionData.questionTotalMarks,
-          ObtainedMarks : submission.obtainedMarks,
-          testResults: testResults,
+          TotalMarks: questionData.questionTotalMarks,
+          ObtainedMarks: submission.obtainedMarks,
+          testResults: testResultsModified,
         };
         formattedResponse.push(submissionData);
       }
+      
+      
   
       res.json({ formattedResponse });
     } catch (error) {
