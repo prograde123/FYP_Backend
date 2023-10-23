@@ -16,6 +16,11 @@ const question = require("../models/question");
 const addAssignment = AsyncHandler(async (req, res, next) => {
   const { questions, assig } = req.body;
 
+  
+  const totalMarks = questions.reduce(
+    (total, quest) => total + quest.questionTotalMarks,
+    0
+  );
   // Parse the dueTime from the frontend as a JavaScript Date object
   const dueTime = new Date(assig.dueTime);
 
@@ -23,10 +28,10 @@ const addAssignment = AsyncHandler(async (req, res, next) => {
     CourseID: assig.CourseID,
     assignmentNumber: assig.assignmentNumber,
     description: assig.description,
-    uploadDate: new Date(assig.uploadDate),
+    uploadDate: new Date(),
     dueDate: new Date(assig.dueDate),
     dueTime: dueTime, // Use the parsed date directly
-    totalMarks: assig.totalMarks,
+    totalMarks: totalMarks,
     format: assig.format,
     noOfQuestions: assig.noOfQuestions,
   };
@@ -138,9 +143,23 @@ const viewAssignmentList = AsyncHandler(
   async(req,res,next) => {
 
   try {
+    console.log('ama g yahan houn')
       const assig = await Assignment.find({   CourseID: req.params.cid });
-
-      res.json({assignments: assig});
+      const setAssignments = assig.map((a)=> {
+        return {
+          _id : a._id,
+          CourseID:a.CourseID,
+          assignmentNumber:a.assignmentNumber,
+          description:a.description,
+          uploadDate:a.uploadDate.toISOString().split('T')[0],
+          dueDate:a.dueDate.toISOString().split('T')[0],
+          dueTime:a.dueTime,
+          totalMarks:a.totalMarks,
+          format:a.format,
+          noOfQuestions:a.noOfQuestions
+        }
+      })
+      res.json({assignments: setAssignments});
   } catch (error) {
     console.error(error);
   }

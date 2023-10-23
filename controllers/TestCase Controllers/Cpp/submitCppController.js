@@ -31,8 +31,7 @@ async function createSubmission(results, req, res,obtainedMarks) {
     submittedDate: new Date(),
     codeFile: req.files[0].originalname,
     testResults: results,
-    
-    obtainedMarks: obtainedMarks 
+    obtainedMarks: Math.round(obtainedMarks,2)
   };
 
   const submission = new Submission(submissionData);
