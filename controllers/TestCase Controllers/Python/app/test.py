@@ -1,30 +1,44 @@
-import os
+def is_odd_even(number):
+    if not isinstance(number, int):
+        return "Invalid"
+    
+    if number % 2 == 0:
+        return "Even"
+    else:
+        return "Odd"
 
-# Define the outputs
-outputs = [
-    "3 is prime",
-    "4 is not prime",
-    "6 is not prime",
-    "1 is prime"
-]
+def test_is_odd_even():
+    # Test even numbers
+    assert is_odd_even(0) == "Even"
+    assert is_odd_even(4) == "Even"
+    assert is_odd_even(100) == "Even"
 
-# Check if the count file exists
-if not os.path.exists("count.txt"):
-    with open("count.txt", "w") as f:
-        f.write("0")
+    # Test odd numbers
+    assert is_odd_even(1) == "Odd"
+    assert is_odd_even(7) == "Odd"
+    assert is_odd_even(99) == "Odd"
 
-# Read the count
-with open("count.txt", "r") as f:
-    count = int(f.read())
+    # Test negative numbers
+    assert is_odd_even(-2) == "Even"
+    assert is_odd_even(-7) == "Odd"
+    assert is_odd_even(-101) == "Odd"
 
-# Print the corresponding message
-if count < 4:
-    x = input("")
-    print(outputs[count])
-else:
-    print("No more outputs!")
+    # Test large numbers
+    assert is_odd_even(1000000) == "Even"
+    assert is_odd_even(999999) == "Odd"
+    assert is_odd_even(123456789) == "Odd"
 
-# Update the count
-count = (count + 1) % 5  # Reset to 0 after 4
-with open("count.txt", "w") as f:
-    f.write(str(count))
+    # Test decimal numbers (considered as invalid inputs)
+    assert is_odd_even(3.14) == "Invalid"
+    assert is_odd_even(10.5) == "Invalid"
+    assert is_odd_even(-8.7) == "Invalid"
+
+    # Test non-integer inputs (considered as invalid inputs)
+    assert is_odd_even("Hello") == "Invalid"
+    assert is_odd_even([1, 2, 3]) == "Invalid"
+    assert is_odd_even(None) == "Invalid"
+
+    print("All test cases passed!")
+
+# Run the test cases
+test_is_odd_even()
