@@ -1,3 +1,7 @@
-x = input('')
-sum = int(x) + 5
+
+x = input("")
+y = input("")
+
+sum = int(x) + int(y)
+
 print(sum)

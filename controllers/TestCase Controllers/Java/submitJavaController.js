@@ -24,27 +24,52 @@ var storage = multer.diskStorage({
 var upload = multer({ storage: storage }).array("files", 12);
 
 
-async function createSubmission(results, req, res,obtainedMarks) {
-  
-  const submissionData = {
-    question : req.params.qid,
-    student: req.user._id,  
-    submittedDate: new Date(),
-    codeFile: req.files[0].originalname,
-    testResults: results,
-    obtainedMarks: Math.round(obtainedMarks,2)
-  };
-
-  const submission = new Submission(submissionData);
-  try {
-    await submission.save();
-    res.json({ results });
-  } catch (error) {
-    console.error(`Error saving Submission: ${error}`);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+async function createSubmission(results, req, res, obtainedMarks) {
+  let submission
+    const submissionData = {
+        question: req.params.qid,
+        student: req.user._id,  
+        submittedDate: new Date(),
+        codeFile: req.files[0].originalname,
+        testResults: results,
+        obtainedMarks: Math.round(obtainedMarks,2)
+    };
+    const isReSubmissionRequest= JSON.parse(req.params.isReSubmission)
+    
+    if(isReSubmissionRequest){
+        console.log(isReSubmissionRequest)
+        submission = new resubmit(submissionData)
+    }
+    else{
+        console.log(isReSubmissionRequest)
+        submission = new Submission(submissionData);
+    }
+    try {
+        await submission.save();
+        res.json({ results });
+    } catch (error) {
+        console.error(`Error saving Submission: ${error}`);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
 }
 
+
+function updateJavaCode(filePath) {
+  let javaCode = fs.readFileSync(filePath, 'utf-8');
+  const regex = /System\.out\.print\("([^"]*)"\)/g;
+  javaCode = javaCode.replace(regex, function (match, capturedContent) {
+
+    return 'System.out.print("")';
+  });
+
+  console.log("Updated code is:");
+  console.log(javaCode);
+
+  fs.writeFileSync(filePath, javaCode, 'utf-8');
+}
+
+
+//for first scenario
 const uploadJava = async (req, res, next) => {
   const question = req.params.qid;
 
@@ -58,8 +83,6 @@ const uploadJava = async (req, res, next) => {
     if (err) {
       return res.end("Something went wrong :(");
     }
-
-    
     let obtainedMarks = 0;
 
     req.files.forEach((file) => {
@@ -67,8 +90,9 @@ const uploadJava = async (req, res, next) => {
         if (err) {
           console.error(`Error reading the file ${file.path}`);
         } else {
+
+          updateJavaCode(file.path);
           console.log(`Content of the file ${file.originalname}:`);
-         // console.log(data);
         }
       });
     });
@@ -146,7 +170,7 @@ const uploadJava = async (req, res, next) => {
     runTestCase(0);
   });
 };
-
+//for second scenario
 const getOutputJava = async (req, res, next) => {
 
 
@@ -164,9 +188,6 @@ const getOutputJava = async (req, res, next) => {
   }
   
 
-
-
-
   upload(req, res, function (err) {
     if (err) {
       return res.end("Something went wrong :(");
@@ -177,6 +198,7 @@ const getOutputJava = async (req, res, next) => {
         if (err) {
           console.error(`Error reading the file ${file.path}`);
         } else {
+          updateJavaCode(file.path)
           console.log(`Content of the file ${file.originalname}:`);
           //console.log(data);
         }
@@ -206,8 +228,6 @@ const getOutputJava = async (req, res, next) => {
       }
     const testCase = testCases[index].input;
 
-
-
     const dockerExec = spawn("docker", [
       "exec",
       "-i",
@@ -235,9 +255,6 @@ const getOutputJava = async (req, res, next) => {
      
       });
 
-
-
-
       if (isArr) {
         const inputBuffer = Buffer.from(testCase.map(String).join("\n"));
         dockerExec.stdin.write(inputBuffer);
@@ -247,12 +264,7 @@ const getOutputJava = async (req, res, next) => {
        
       }
       dockerExec.stdin.end();
-      
-
-   
-
-
-
+  
     }
 
     runTestCase(0);

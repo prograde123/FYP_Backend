@@ -9,8 +9,7 @@ const questionModel = require("../../../models/question");
 const testCaseResult = require("../../../models/testResult");
 const Submission = require("../../../models/submission");
 const formidable = require('formidable');
-
-
+const resubmit = require("../../../models/resubmit");
 var app = express();
 
 var storage = multer.diskStorage({
@@ -28,7 +27,9 @@ var storage = multer.diskStorage({
 
 var upload = multer({ storage: storage }).array("files", 12);
 
+
 async function createSubmission(results, req, res, obtainedMarks) {
+  let submission
     const submissionData = {
         question: req.params.qid,
         student: req.user._id,  
@@ -37,8 +38,16 @@ async function createSubmission(results, req, res, obtainedMarks) {
         testResults: results,
         obtainedMarks: Math.round(obtainedMarks,2)
     };
-
-    const submission = new Submission(submissionData);
+    const isReSubmissionRequest= JSON.parse(req.params.isReSubmission)
+    
+    if(isReSubmissionRequest){
+        console.log(isReSubmissionRequest)
+        submission = new resubmit(submissionData)
+    }
+    else{
+        console.log(isReSubmissionRequest)
+        submission = new Submission(submissionData);
+    }
     try {
         await submission.save();
         res.json({ results });
@@ -48,9 +57,28 @@ async function createSubmission(results, req, res, obtainedMarks) {
     }
 }
 
+
+function updatePythonCode(filePath) {
+  let pythonCode = fs.readFileSync(filePath, 'utf-8');
+
+  const regex = /input\(\s*\)|input\(.+?\)/g;
+
+  javaCode = pythonCode.replace(regex, function (match, capturedContent) {
+   
+    return 'input("")';
+  });
+
+  console.log("Updated code is:");
+  console.log(javaCode);
+
+  fs.writeFileSync(filePath, javaCode, 'utf-8');
+}
+
+
+
+//for first scenario
 const uploadPython = async (req, res, next) => {
   const question = req.params.qid;
-
   const testCases = await testCase.find({ Question: question });
   const ques = await questionModel.findOne({ _id: question });
   const eachTestCaseMarks =
@@ -68,6 +96,8 @@ const uploadPython = async (req, res, next) => {
         if (err) {
           console.error(`Error reading the file ${file.path}`);
         } else {
+          updatePythonCode(file.path);
+
           console.log(`Content of the file ${file.originalname}:`);
           console.log(data);
         }
@@ -79,6 +109,7 @@ const uploadPython = async (req, res, next) => {
 
     function runTestCase(index) {
       if (index >= testCases.length) {
+
         createSubmission(results, req, res,obtainedMarks); 
         return;
       }
@@ -104,8 +135,7 @@ const uploadPython = async (req, res, next) => {
       });
 
       dockerExec.on("close", (code) => {
-        console.log(testCase.output)
-        console.log(actualOutput)
+       
         const result = {
           testCase: testCase._id,
           input: testCase.input,
@@ -146,12 +176,9 @@ const uploadPython = async (req, res, next) => {
   });
 };
 
-
+// for second scenario
 
 const getOutputPython = async (req, res, next) => {
-
-
- 
   const testCasesString = req.params.testCases;
   const isInputArray = req.params.isInputArray;
   const isArr = JSON.parse(isInputArray);
@@ -176,6 +203,8 @@ const getOutputPython = async (req, res, next) => {
         if (err) {
           console.error(`Error reading the file ${file.path}`);
         } else {
+
+          updatePythonCode(file.path)
           console.log(`Content of the file ${file.originalname}:`);
           console.log(data);
         }

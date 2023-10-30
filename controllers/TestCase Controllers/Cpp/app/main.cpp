@@ -1,10 +1,13 @@
-#include <iostream>
+#include<iostream>
 using namespace std;
-
-int main() {
-  int x = 5;
-  int y = 6;
-  int sum = x + y;
-  cout << sum;
-  return 0;
+int main()
+{
+    int A, B, sum;    
+    cout << ""   ;
+    cin >> A;    
+    cout << ""  ;
+    cin >> B;    
+    sum = A + B;
+    cout << sum;    
+    return 0;
 }

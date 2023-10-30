@@ -7,13 +7,15 @@ var CppController = require('../controllers/TestCase Controllers/Cpp/submitCppCo
 var SubmitCheckController = require('../controllers/checkSubmission')
 var auth = require('../middleware/authorization')
 
-router.post('/Java/:qid',auth,JavaController.uploadJava);
-router.post('/Python/:qid',auth,PythonController.uploadPython);
-router.post('/C/:qid' , auth,CController.uploadC )
-router.post('/Cpp/:qid' ,auth, CppController.uploadCpp )
+router.post('/Java/:qid/:isReSubmission',auth,JavaController.uploadJava);
+router.post('/Python/:qid/:isReSubmission',auth,PythonController.uploadPython);
+router.post('/C/:qid/:isReSubmission' , auth,CController.uploadC )
+router.post('/Cpp/:qid/:isReSubmission' ,auth, CppController.uploadCpp )
 
 router.get('/isSubmitted/:aid' ,auth, SubmitCheckController.Submission  )
+router.get('/isReSubmitted/:aid',auth,SubmitCheckController.ReSubmission)
 router.get('/getSubmissions' ,auth ,SubmitCheckController.getSubmission )
+router.get('/getReSubmissions' ,auth ,SubmitCheckController.getReSubmission)
 router.get('/AssignmentSubmissions/:aid' , SubmitCheckController.allAssignmentSubmissions)
 router.get('/GetGrades/:cid' , auth , SubmitCheckController.getGrades )
 

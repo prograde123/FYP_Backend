@@ -23,27 +23,51 @@ var storage = multer.diskStorage({
 
 var upload = multer({ storage: storage }).array("files", 12);
 
-async function createSubmission(results, req, res,obtainedMarks) {
-  
-  const submissionData = {
-    question : req.params.qid,
-    student: req.user._id,  
-    submittedDate: new Date(),
-    codeFile: req.files[0].originalname,
-    testResults: results,
-    obtainedMarks: Math.round(obtainedMarks,2)
-  };
-
-  const submission = new Submission(submissionData);
-  try {
-    await submission.save();
-    res.json({ results });
-  } catch (error) {
-    console.error(`Error saving Submission: ${error}`);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+async function createSubmission(results, req, res, obtainedMarks) {
+  let submission
+    const submissionData = {
+        question: req.params.qid,
+        student: req.user._id,  
+        submittedDate: new Date(),
+        codeFile: req.files[0].originalname,
+        testResults: results,
+        obtainedMarks: Math.round(obtainedMarks,2)
+    };
+    const isReSubmissionRequest= JSON.parse(req.params.isReSubmission)
+    
+    if(isReSubmissionRequest){
+        console.log(isReSubmissionRequest)
+        submission = new resubmit(submissionData)
+    }
+    else{
+        console.log(isReSubmissionRequest)
+        submission = new Submission(submissionData);
+    }
+    try {
+        await submission.save();
+        res.json({ results });
+    } catch (error) {
+        console.error(`Error saving Submission: ${error}`);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
 }
 
+function updateCCode(filePath) {
+  let CCode = fs.readFileSync(filePath, 'utf-8');
+  const regex = /printf\("([^"]*)"\)/g;
+
+  javaCode = CCode.replace(regex, function (match, capturedContent) {
+
+    return 'printf("")';
+  });
+
+  console.log("Updated code is:");
+  console.log(javaCode);
+
+  fs.writeFileSync(filePath, javaCode, 'utf-8');
+}
+
+//first scenario
 const uploadC = async (req, res, next) => {
   const question = req.params.qid;
 
@@ -65,6 +89,7 @@ const uploadC = async (req, res, next) => {
         if (err) {
           console.error(`Error reading the file ${file.path}`);
         } else {
+          updateCCode(file.path);
           console.log(`Content of the file ${file.originalname}:`);
           
         }
@@ -161,11 +186,8 @@ const uploadC = async (req, res, next) => {
 };
 
 
-
+//second scenario
 const getOutputC = async (req, res, next) => {
-
-
- 
   const testCasesString = req.params.testCases;
   const isInputArray = req.params.isInputArray;
   const isArr = JSON.parse(isInputArray);
@@ -190,6 +212,7 @@ const getOutputC = async (req, res, next) => {
         if (err) {
           console.error(`Error reading the file ${file.path}`);
         } else {
+          updateCCode(file.path)
           console.log(`Content of the file ${file.originalname}:`);
           //console.log(data);
         }
