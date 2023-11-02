@@ -7,7 +7,7 @@ const testCase = require("../../../models/testCase");
 const questionModel = require("../../../models/question");
 const testCaseResult = require("../../../models/testResult");
 const Submission = require("../../../models/submission");
-
+const resubmit = require("../../../models/resubmit");
 var storage = multer.diskStorage({
   destination: function (req, file, callback) {
     var dir = "./controllers/TestCase Controllers/C/app";
@@ -36,11 +36,9 @@ async function createSubmission(results, req, res, obtainedMarks) {
     const isReSubmissionRequest= JSON.parse(req.params.isReSubmission)
     
     if(isReSubmissionRequest){
-        console.log(isReSubmissionRequest)
         submission = new resubmit(submissionData)
     }
     else{
-        console.log(isReSubmissionRequest)
         submission = new Submission(submissionData);
     }
     try {
@@ -54,15 +52,12 @@ async function createSubmission(results, req, res, obtainedMarks) {
 
 function updateCCode(filePath) {
   let CCode = fs.readFileSync(filePath, 'utf-8');
-  const regex = /printf\("([^"]*)"\)/g;
-
+  const regex = /printf\("((?![\\n* ]).*)"\)/g;
   javaCode = CCode.replace(regex, function (match, capturedContent) {
 
     return 'printf("")';
   });
-
-  console.log("Updated code is:");
-  console.log(javaCode);
+  console.log("updated code",javaCode)
 
   fs.writeFileSync(filePath, javaCode, 'utf-8');
 }
@@ -89,8 +84,7 @@ const uploadC = async (req, res, next) => {
         if (err) {
           console.error(`Error reading the file ${file.path}`);
         } else {
-          updateCCode(file.path);
-          console.log(`Content of the file ${file.originalname}:`);
+          updateCCode(file.path)
           
         }
       });
@@ -120,16 +114,18 @@ const uploadC = async (req, res, next) => {
     
       dockerExec.stdout.on("data", (data) => {
         actualOutput += data.toString();
+        console.log("actual output " , actualOutput)
       });
     
       dockerExec.stderr.on("data", (data) => {
         errorOutput += data.toString();
+        console.log("actual output " , errorOutput)
       });
     
       dockerExec.on("close", (code) => {
         const expectedOutputLines = testCase.output.split("\n"); // Split expected output into lines
         const actualOutputLines = actualOutput.split("\n"); // Split actual output into lines
-    
+        console.log("actualOutputLines " ,actualOutputLines)
         // Remove empty lines from the actual output
         const cleanedActualOutputLines = actualOutputLines.filter((line) => line.trim() !== "");
     
@@ -166,6 +162,7 @@ const uploadC = async (req, res, next) => {
         } catch (error) {
           console.error(`Error saving TestResult: ${error}`);
         }
+        
       });
     
       const isInputArray = ques.isInputArray;
@@ -196,7 +193,6 @@ const getOutputC = async (req, res, next) => {
   
   if (isArr) {
     testCases = JSON.parse(testCasesString);
-    console.log("testCases", testCases);
   } else {
     testCases = JSON.parse(testCasesString);
   }
@@ -235,8 +231,6 @@ const getOutputC = async (req, res, next) => {
             output : OutputArray[i]
           })
         }
-
-        console.log("inputOutput Array is : " , inputOutputArray)
     
         
         res.send(inputOutputArray);
@@ -245,7 +239,6 @@ const getOutputC = async (req, res, next) => {
       }
     const testCase = testCases[index].input;
 
-    console.log("TEst CASE input " , testCase)
 
 
     const dockerExec = spawn("docker", [
@@ -263,7 +256,6 @@ const getOutputC = async (req, res, next) => {
       dockerExec.stdout.on("data", (data) => {
         actualOutput += data.toString();
         OutputArray.push(actualOutput.split('\n')[0])
-        console.log(OutputArray)
       });
 
       dockerExec.stderr.on("data", (data) => {
@@ -280,7 +272,6 @@ const getOutputC = async (req, res, next) => {
 
 
       if (isArr) {
-        console.log("i am here in true when input array is   " , isInputArray)
         const inputBuffer = Buffer.from(testCase.map(String).join("\n"));
         dockerExec.stdin.write(inputBuffer);
         
