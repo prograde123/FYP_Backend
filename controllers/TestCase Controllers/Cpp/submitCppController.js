@@ -7,7 +7,7 @@ const testCase = require("../../../models/testCase");
 const questionModel = require("../../../models/question");
 const testCaseResult = require("../../../models/testResult");
 const Submission = require("../../../models/submission");
-
+const resubmit = require("../../../models/resubmit");
 var storage = multer.diskStorage({
   destination: function (req, file, callback) {
     var dir = "./controllers/TestCase Controllers/Cpp/app";
@@ -54,7 +54,7 @@ async function createSubmission(results, req, res, obtainedMarks) {
 
 function updateCppCode(filePath) {
   let CppCode = fs.readFileSync(filePath, 'utf-8');
-  const regex = /cout << "([^"]*)"/g;
+  const regex = /cout\s*<<\s*"(?![* "\n]).*?"/g;
 
   javaCode = CppCode.replace(regex, function (match, capturedContent) {
     return 'cout << "" ';
