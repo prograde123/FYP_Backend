@@ -2,6 +2,7 @@
 
 int main() {
     int n, space, i, j;
+    printf("");
     scanf("%d", &n);
 
     // Upper part of the diamond

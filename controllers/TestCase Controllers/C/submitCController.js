@@ -221,25 +221,20 @@ const getOutputC = async (req, res, next) => {
     function runTestCase(index) {
       
       if (testCases.length <= index) {
-
         let inputOutputArray = []
-
-
         for(i=0;i<testCases.length ; i++){
+          const outputString = OutputArray[i].join('\n');
           inputOutputArray.push({
             input : testCases[i].input,
-            output : OutputArray[i]
+            output : outputString
           })
         }
-    
-        
+        console.log("inputOutput Array is : " , inputOutputArray)
         res.send(inputOutputArray);
-    
         return;
       }
     const testCase = testCases[index].input;
-
-
+    console.log("TEst CASE input " , testCase)
 
     const dockerExec = spawn("docker", [
       "exec",
@@ -254,8 +249,14 @@ const getOutputC = async (req, res, next) => {
       let errorOutput = "";
 
       dockerExec.stdout.on("data", (data) => {
-        actualOutput += data.toString();
-        OutputArray.push(actualOutput.split('\n')[0])
+        actualOutput = data.toString().split('\n');
+        OutputArray[index] = OutputArray[index] || [];
+        OutputArray[index].push(...actualOutput);
+        console.log(OutputArray);
+        if (OutputArray[index].length > 0 && OutputArray[index][OutputArray[index].length - 1] === '') {
+          // Remove the last empty line
+          OutputArray[index].pop();
+        }
       });
 
       dockerExec.stderr.on("data", (data) => {
@@ -263,27 +264,18 @@ const getOutputC = async (req, res, next) => {
       });
 
       dockerExec.on("close", (code) => {
-
-        
         runTestCase(index + 1);
-     
       });
-
-
 
       if (isArr) {
         const inputBuffer = Buffer.from(testCase.map(String).join("\n"));
         dockerExec.stdin.write(inputBuffer);
-        
       } else {
-        dockerExec.stdin.write(testCase.replace(",", "\n"));
-       
+        dockerExec.stdin.write(testCase.replace(",", "\n"));  
       }
       dockerExec.stdin.end();
     }
-
     runTestCase(0);
   });
 };
-
 module.exports = { uploadC , getOutputC };

@@ -135,29 +135,46 @@ const uploadPython = async (req, res, next) => {
       });
 
       dockerExec.on("close", (code) => {
-       
+        const expectedOutputLines = testCase.output.split("\n"); // Split expected output into lines
+        const actualOutputLines = actualOutput.split("\n"); // Split actual output into lines
+        console.log("actualOutputLines " ,actualOutputLines)
+        // Remove empty lines from the actual output
+        const cleanedActualOutputLines = actualOutputLines.filter((line) => line.trim() !== "");
+    
+        let passed = errorOutput.trim() === "" && 
+          expectedOutputLines.length === cleanedActualOutputLines.length;
+    
+        if (passed) {
+          for (let i = 0; i < expectedOutputLines.length; i++) {
+            if (expectedOutputLines[i].trim() !== cleanedActualOutputLines[i].trim()) {
+              passed = false;
+              break;
+            }
+          }
+        }
+    
         const result = {
           testCase: testCase._id,
           input: testCase.input,
           output: testCase.output,
           actualOutput: actualOutput,
           errorOutput: errorOutput,
-          passed:
-            actualOutput.trim() === testCase.output.trim() &&
-            errorOutput.trim() === "",
+          passed: passed,
         };
+    
         const testResult = new testCaseResult(result);
         try {
           testResult.save();
-          results.push(testResult._id); 
-          // res.json({testResult})
-          if (testResult.passed) {
+          results.push(testResult._id); // Storing the ObjectId in the results array
+    
+          if (passed) {
             obtainedMarks += eachTestCaseMarks;
           }
           runTestCase(index + 1);
         } catch (error) {
           console.error(`Error saving TestResult: ${error}`);
         }
+        
       });
 
       const isInputArray = ques.isInputArray;
@@ -217,22 +234,16 @@ const getOutputPython = async (req, res, next) => {
     function runTestCase(index) {
       
       if (testCases.length <= index) {
-
         let inputOutputArray = []
-
-
         for(i=0;i<testCases.length ; i++){
+          const outputString = OutputArray[i].join('\n');
           inputOutputArray.push({
             input : testCases[i].input,
-            output : OutputArray[i]
+            output : outputString
           })
         }
-
         console.log("inputOutput Array is : " , inputOutputArray)
-    
-        
         res.send(inputOutputArray);
-    
         return;
       }
     const testCase = testCases[index].input;
@@ -252,9 +263,14 @@ const getOutputPython = async (req, res, next) => {
       let errorOutput = "";
 
       dockerExec.stdout.on("data", (data) => {
-        actualOutput += data.toString();
-        OutputArray.push(actualOutput.split('\n')[0])
-        console.log(OutputArray)
+        actualOutput = data.toString().split('\n');
+        OutputArray[index] = OutputArray[index] || [];
+        OutputArray[index].push(...actualOutput);
+        console.log(OutputArray);
+        if (OutputArray[index].length > 0 && OutputArray[index][OutputArray[index].length - 1] === '') {
+          // Remove the last empty line
+          OutputArray[index].pop();
+        }
       });
 
       dockerExec.stderr.on("data", (data) => {

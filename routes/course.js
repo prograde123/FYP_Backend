@@ -385,6 +385,107 @@ router.get("/CourseDetails/:cid", async function (req, res) {
   }
 });
 
+router.post("/generateSimpleInputs", async (req, res) => {
 
+  function generateRandomString(length) {
+  const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const maxCharIndex = characters.length - 1;
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * (maxCharIndex + 1));
+    result += characters.charAt(randomIndex);
+  }
+  return result;
+}
+
+  function generateTestCases(numInputs, numTestCases, startRange, endRange, dataType) {
+    const testCases = [];
+    for (let i = 0; i < numTestCases; i++) {
+      const testCase = [];
+      for (let j = 0; j < numInputs; j++) {
+        let randomValue;
+        if (dataType === "int") {
+          randomValue = Math.floor(Math.random() * (endRange - startRange + 1)) + startRange;
+        } 
+        
+        else if (dataType === "float") {
+          randomValue = parseFloat((Math.random() * (endRange - startRange) + startRange).toFixed(3));
+        } 
+        
+        else if (dataType === "string") {
+         const stringLength = Math.floor(Math.random() * (endRange - startRange + 1)) + startRange;
+         randomValue = generateRandomString(stringLength);
+        }
+        
+        testCase.push(randomValue);
+      }
+
+      const testCaseString = testCase.join(',');
+      testCases.push(testCaseString);
+    }
+    return testCases;
+  }
+
+  //to save the inputs genearted to db
+  const { numInputs, numTestCases, startRange, endRange, dataType } = req.body;
+  try {
+    const generatedTestCases = generateTestCases(numInputs, numTestCases, startRange, endRange, dataType);
+    res.status(200).json(generatedTestCases);
+  } catch (error) {
+    console.error("Error generating test cases:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/generateArrayInputs", async (req, res) => {
+
+  function generateRandomString(length) {
+  const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const maxCharIndex = characters.length - 1;
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * (maxCharIndex + 1));
+    result += characters.charAt(randomIndex);
+  }
+  return result;
+}
+
+  function generateTestCases(arraySize, numTestCases, startRange, endRange, dataType) {
+    const testCases = [];
+    for (let i = 0; i < numTestCases; i++) {
+      const testCase = [];
+      for (let j = 0; j < arraySize; j++) {
+        let randomValue;
+        
+        if (dataType === "int") {
+          randomValue = Math.floor(Math.random() * (endRange - startRange + 1)) + startRange;
+        } 
+        
+        else if (dataType === "float") {
+          randomValue = parseFloat((Math.random() * (endRange - startRange) + startRange).toFixed(3));
+        } 
+        
+        else if (dataType === "string") {
+          const stringLength = Math.floor(Math.random() * (endRange - startRange + 1)) + startRange;
+          randomValue = generateRandomString(stringLength);
+        }
+        
+        testCase.push(randomValue);
+      }
+
+      testCases.push(testCase);
+    }
+    return JSON.stringify(testCases);
+  }
+
+  const { arraySize, numTestCases, startRange, endRange, dataType } = req.body;
+  try {
+    const generatedTestCases = generateTestCases(arraySize, numTestCases, startRange, endRange, dataType);
+    res.status(200).send(generatedTestCases);
+  } catch (error) {
+    console.error("Error generating test cases:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 module.exports = router;
