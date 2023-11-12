@@ -14,6 +14,10 @@ const TestCasesSchema = new Schema({
     type: String,
     required: true,
   },
+  arraySize:{
+    type: Schema.Types.Mixed,
+  }
 });
+
 
 module.exports = mongoose.model("TestCase", TestCasesSchema);
