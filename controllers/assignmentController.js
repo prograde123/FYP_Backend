@@ -14,7 +14,8 @@ const question = require("../models/question");
 
 
 const addAssignment = AsyncHandler(async (req, res, next) => {
-  const { questions, assig } = req.body;
+  const { questions, assig //receive usestate herre
+  } = req.body;
 
   
   const totalMarks = questions.reduce(
@@ -52,6 +53,7 @@ const addAssignment = AsyncHandler(async (req, res, next) => {
         const testCase = await TestCase.create({
           Question: question._id,
           ...testCases,
+          //arraysize:useState
         });
       });
     });
@@ -143,7 +145,7 @@ const viewAssignmentList = AsyncHandler(
   async(req,res,next) => {
 
   try {
-    console.log('ama g yahan houn')
+    
       const assig = await Assignment.find({   CourseID: req.params.cid });
       const setAssignments = assig.map((a)=> {
         return {
