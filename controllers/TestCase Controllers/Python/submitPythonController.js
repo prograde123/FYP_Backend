@@ -207,6 +207,7 @@ const getOutputPython = async (req, res, next) => {
     console.log("testCases", testCases);
   } else {
     testCases = JSON.parse(testCasesString);
+    console.log("testCases", testCases);
   }
 
 

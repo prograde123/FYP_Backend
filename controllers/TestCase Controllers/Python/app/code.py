@@ -3,7 +3,7 @@ def main():
         # Get user input for the array elements
         array = []
         for i in range(4):
-            element = int(input())
+            element = int(input(""))
             array.append(element)
 
         # Calculate the sum of array elements
