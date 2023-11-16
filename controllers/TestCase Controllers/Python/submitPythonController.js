@@ -240,7 +240,8 @@ const getOutputPython = async (req, res, next) => {
           const outputString = OutputArray[i].join('\n');
           inputOutputArray.push({
             input : testCases[i].input,
-            output : outputString
+            output : outputString,
+          //  arraySize : isArr ? testCases[i].arraySize : null
           })
         }
         console.log("inputOutput Array is : " , inputOutputArray)
