@@ -14,7 +14,7 @@ const question = require("../models/question");
 
 
 const addAssignment = AsyncHandler(async (req, res, next) => {
-  const { questions, assig //receive usestate herre
+  const { questions, assig
   } = req.body;
 
   
@@ -53,7 +53,6 @@ const addAssignment = AsyncHandler(async (req, res, next) => {
         const testCase = await TestCase.create({
           Question: question._id,
           ...testCases,
-          //arraysize:useState
         });
       });
     });
