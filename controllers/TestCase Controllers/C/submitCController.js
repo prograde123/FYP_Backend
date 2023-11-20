@@ -282,28 +282,18 @@ const getOutputC = async (req, res, next) => {
       });
 
       if (isArr) {
-        const arraySize = testCase.arraySize;
-        let inputBuffer = '';
+        const inputBuffer = Buffer.from(testCase.map(String).join("\n"));
+        const arraySize = testCases[index].arraySize;
+        const inputWithSizeBuffer = Buffer.concat([
+          Buffer.from(arraySize + "\n"),
+          inputBuffer,
+        ]);
 
-        if (Array.isArray(testCase.input)) {
-          inputBuffer = Buffer.from(arraySize + "\n");
-          inputBuffer = Buffer.concat([
-            inputBuffer,
-            Buffer.from(testCase.input.map(String).join("\n") + "\n"),
-          ]);
-        } else if (testCase.input) {
-          inputBuffer = Buffer.from(testCase.input.replace(",", "\n") + "\n");
-        }
-
-        dockerExec.stdin.write(inputBuffer);
-        dockerExec.stdin.end();
-      } 
-      
-      else {
+        dockerExec.stdin.write(inputWithSizeBuffer);
+      } else {
         dockerExec.stdin.write(testCase.replace(",", "\n"));
-        dockerExec.stdin.end();
       }
-      
+      dockerExec.stdin.end();
     }
     runTestCase(0);
   });

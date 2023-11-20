@@ -172,7 +172,19 @@ const uploadJava = async (req, res, next) => {
       const isInputArray = ques.isInputArray;
 
       if (isInputArray) {
-        const inputBuffer = Buffer.from(testCase.input.map(String).join("\n"));
+        const arraySize = testCase.arraySize;
+        let inputBuffer = "";
+
+        if (Array.isArray(testCase.input)) {
+          inputBuffer = Buffer.from(arraySize + "\n");
+          inputBuffer = Buffer.concat([
+            inputBuffer,
+            Buffer.from(testCase.input.join("\n") + "\n"),
+          ]);
+        } else {
+          inputBuffer = Buffer.from(testCase.input.replace(",", "\n") + "\n");
+        }
+
         dockerExec.stdin.write(inputBuffer);
         dockerExec.stdin.end();
       } else {
@@ -229,7 +241,8 @@ const getOutputJava = async (req, res, next) => {
           const outputString = OutputArray[i].join('\n');
           inputOutputArray.push({
             input : testCases[i].input,
-            output : outputString
+            output : outputString,
+            arraySize : isArr ? testCases[i].arraySize : null
           })
         }
         console.log("inputOutput Array is : " , inputOutputArray)
@@ -271,14 +284,17 @@ const getOutputJava = async (req, res, next) => {
 
       if (isArr) {
         const inputBuffer = Buffer.from(testCase.map(String).join("\n"));
-        dockerExec.stdin.write(inputBuffer);
-        
+        const arraySize = testCases[index].arraySize;
+        const inputWithSizeBuffer = Buffer.concat([
+          Buffer.from(arraySize + "\n"),
+          inputBuffer,
+        ]);
+
+        dockerExec.stdin.write(inputWithSizeBuffer);
       } else {
         dockerExec.stdin.write(testCase.replace(",", "\n"));
-       
       }
       dockerExec.stdin.end();
-  
     }
 
     runTestCase(0);
