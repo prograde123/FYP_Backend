@@ -3,6 +3,9 @@ var router = express.Router();
 const Course = require("../models/course");
 const User = require("../models/user")
 const Student = require("../models/student")
+const Assignment = require("../models/assignment")
+const Teacher = require("../models/teacher")
+const Submission = require("../models/submission")
 var mongoose = require("mongoose");
 
 //create a new course
@@ -487,5 +490,67 @@ router.post("/generateArrayInputs", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+router.get('/assignmentsCount', async (req, res) => {
+  try {
+    const counts = await Promise.all([
+      Assignment.countDocuments(),
+      Course.countDocuments(),
+      Submission.countDocuments(),
+      Teacher.countDocuments(),
+      Student.countDocuments(),
+    ]);
+
+    const [assignmentsCount, coursesCount, submissionsCount, teachersCount, studentsCount] = counts;
+    
+    res.json({
+      assignmentsCount,
+      coursesCount,
+      submissionsCount,
+      teachersCount,
+      studentsCount,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/coursesCountByMonth', async (req, res) => {
+  try {
+    const coursesByMonth = await Course.aggregate([
+      {
+        $group: {
+          _id: {
+            month: { $month: '$startingDate' }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          month: '$_id.month',
+          count: 1
+        }
+      },
+      {
+        $sort: {
+          month: 1
+        }
+      }
+    ]);
+
+    const countsMap = new Map(coursesByMonth.map(item => [item.month, item.count]));
+    const finalCounts = [];
+    for (let i = 1; i <= 12; i++) {
+      finalCounts.push({ month: i, count: countsMap.get(i) || 0 });
+    }
+
+    res.json(finalCounts);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 module.exports = router;
