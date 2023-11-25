@@ -9,7 +9,6 @@ const { exec } = require('child_process');
 
 const app = express();
 
-
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
 var courseRouter= require("./routes/course")
@@ -75,3 +74,4 @@ directoriesToRunCommand.forEach((directory) => {
 });
 
 module.exports = app;
+
