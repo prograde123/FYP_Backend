@@ -6,14 +6,21 @@ router.get('/', function(req, res, next) {
   });
 
 router.post('/addAssignment',assigController.addAssignment);
-router.delete('/deleteAssignment/:cid/:aid' , assigController.deleteAssignment)
-router.patch('/editAssignment', assigController.editAssignment)
 router.get('/viewAssigList/:cid', assigController.viewAssignmentList)
 router.get('/viewAssignment/:aid',assigController.viewAssignment)
 router.get('/submiitedAssigList',assigController.viewSubmittedList)
 
 
+//edit 
+router.put('/editAssignment', assigController.editAssignment)
+router.put('/editquestion',assigController.editQuestion)
+router.put('/addQuestionInAssignment',assigController.addQuestionInAssignment)
+router.put('/editTestCase',assigController.editTestCase)
+router.post('/AddTestCaseInQuestion',assigController.AddTestCaseInQuestion)
 
+//delete
+router.delete('/deleteAssignment/:cid/:aid' , assigController.deleteAssignment)
+router.delete('/deleteQuestion/:qid', assigController.deleteQuestion)
+router.delete('/deleteTestCase/:tid' , assigController.deleteTestCases)
 
-
-  module.exports = router;
+module.exports = router;

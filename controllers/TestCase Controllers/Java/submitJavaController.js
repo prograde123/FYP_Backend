@@ -56,7 +56,8 @@ async function createSubmission(results, req, res, obtainedMarks) {
 
 function updateJavaCode(filePath) {
   let javaCode = fs.readFileSync(filePath, 'utf-8');
-  const regex = /System\.out\.print\("([^"\n\r]*[^"\s])"\)/g;
+  //const regex = /System\.out\.print\("([^"\n\r]*[^"\s])"\)/g;
+  const regex = /System\.out\.print(ln)?\("([^"\n\r]*[^"\s])"\)/g;
   javaCode = javaCode.replace(regex, function (match, capturedContent) {
 
     return 'System.out.print("")';

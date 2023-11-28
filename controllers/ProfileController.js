@@ -46,23 +46,19 @@ const getProfie = AsyncHandler(
 )
 const updateProfile = AsyncHandler(async (req, res, next) => {
     try {
-        const { id, userName, fullName, email, role,  profilePic, cv } = req.body;
+        const {  userName, fullName, email, role,  profilePic, cv } = req.body;
 
-        const findData = await User.findById(id);
+        const findData = await User.findById(req.user._id);
 
         if (findData) {
             const userData = {
                 fullName: fullName || findData.fullName,
                 email: email || findData.email,
-                role: role || findData.role,
-             
                 profilePic: profilePic || findData.profilePic
             };
-
             console.log(userData);
-
             const updatedUser = await User.findByIdAndUpdate(
-                id,
+                req.user._id,
                 { $set: userData },
                 { new: true }
             );

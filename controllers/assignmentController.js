@@ -9,54 +9,60 @@ const { Types } = require('mongoose');
 const Question = require("../models/question");
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
-
 const question = require("../models/question");
 
 
 const addAssignment = AsyncHandler(async (req, res, next) => {
-  const { questions, assig
-  } = req.body;
+  const { questions, assig } = req.body;
+  const maxAssignment = await Assignment.findOne(
+    { CourseID: assig.CourseID },
+    { assignmentNumber: 1 }
+  )
+    .sort({ assignmentNumber: -1 })
+    .limit(1);
 
+  const newAssignmentNumber = maxAssignment
+    ? maxAssignment.assignmentNumber + 1
+    : 1;
   
-  const totalMarks = questions.reduce(
-    (total, quest) => total + quest.questionTotalMarks,
-    0
-  );
-  // Parse the dueTime from the frontend as a JavaScript Date object
   const dueTime = new Date(assig.dueTime);
 
   const data = {
     CourseID: assig.CourseID,
-    assignmentNumber: assig.assignmentNumber,
+    assignmentNumber: newAssignmentNumber, 
     description: assig.description,
     uploadDate: new Date(),
     dueDate: new Date(assig.dueDate),
-    dueTime: dueTime, // Use the parsed date directly
-    totalMarks: totalMarks,
+    dueTime: dueTime, 
+    totalMarks: questions.reduce(
+      (total, quest) => total + quest.questionTotalMarks,
+      0
+    ),
     format: assig.format,
     noOfQuestions: assig.noOfQuestions,
   };
 
   try {
     const assignment = await Assignment.create(data);
-
-
-    questions.map(async (quest) => {
-      const question = await Question.create({
-        Assignment: assignment._id,
-        questionDescription: quest.questionDescription,
-        questionTotalMarks: quest.questionTotalMarks,
-        isInputArray: quest.isInputArray,
-      });
-
-      quest.testCases.map(async (testCases) => {
-        const testCase = await TestCase.create({
-          Question: question._id,
-          ...testCases,
+    await Promise.all(
+      questions.map(async (quest) => {
+        const question = await Question.create({
+          Assignment: assignment._id,
+          questionDescription: quest.questionDescription,
+          questionTotalMarks: quest.questionTotalMarks,
+          isInputArray: quest.isInputArray,
         });
-      });
-    });
 
+        await Promise.all(
+          quest.testCases.map(async (testCases) => {
+            await TestCase.create({
+              Question: question._id,
+              ...testCases,
+            });
+          })
+        );
+      })
+    );
 
     res.send({ success: true });
   } catch (error) {
@@ -66,26 +72,56 @@ const addAssignment = AsyncHandler(async (req, res, next) => {
 });
 
 
+
+const addQuestionInAssignment = AsyncHandler(async (req, res, next) => {
+  const { newQuestion, assignemntID
+  } = req.body;
+  try {
+    const assign = await Assignment.findById(assignemntID);
+    const assignment = await Assignment.updateOne(
+      {_id : assignemntID},
+      {
+        noOfQuestions : assign.noOfQuestions + 1
+      }
+    )
+    const question = await Question.create({
+        Assignment: assignemntID,
+        questionDescription: newQuestion.questionDescription,
+        questionTotalMarks: newQuestion.questionTotalMarks,
+        isInputArray: newQuestion.isInputArray,
+      });
+
+      newQuestion.testCases.map(async (testCases) => {
+        const testCase = await TestCase.create({
+          Question: question._id,
+          ...testCases,
+        });
+      });
+    
+
+
+    res.send({ success: true });
+  } catch (error) {
+    console.log("Error:", error);
+    res.send({ success: false });
+  }
+});
+
 const editAssignment = AsyncHandler(async(req,res,next)=>{
   
-  const {assigId,assignmentNumber,description,uploadDate,dueDate,totalMarks,assignmentFile,format} = req.body;
-  //const assignment= await Assignment.findById(assigId)
+  const {assigId,assignmentNumber,description,dueDate,dueTime,format} = req.body;
   try{
   const assignment = await Assignment.updateOne(
     {_id : assigId},
     {
       assignmentNumber : assignmentNumber ,
-
-
-    description : description ,
-    uploadDate : uploadDate ,
-    dueDate : dueDate ,
-    totalMarks : totalMarks ,
-    assignmentFile : assignmentFile ,
-   format : format 
-
+      description : description ,
+      dueDate : dueDate ,
+      dueTime : dueTime ,
+      format : format 
     }
   )
+  console.log(assignment)
     
     res.json({ success: `Assignment successfully updated! ` });
   }
@@ -93,37 +129,135 @@ const editAssignment = AsyncHandler(async(req,res,next)=>{
     res.send({ message: err });
   }
 })
-const deleteAssignment = AsyncHandler(async(req, res, next) => {
-    const assignmentid = req.params.aid;
-    const courseid = req.params.cid;
-    if (!Types.ObjectId.isValid(courseid)) {
-      res.status(400).json({ error: 'Invalid courseid' });
+
+
+const editQuestion = AsyncHandler(async(req,res,next)=>{
+  
+  const {qId,questionDescription,questionTotalMarks,isInputArray} = req.body;
+  try{
+  const question = await Question.updateOne(
+    {_id : qId},
+    {
+      questionDescription : questionDescription ,
+      questionTotalMarks : questionTotalMarks ,
+      isInputArray : isInputArray ,
+    }
+  )
+  console.log(question)
+    
+    res.json({ success: `question successfully updated! ` });
+  }
+  catch(err) {
+    res.send({ message: err });
+  }
+})
+
+
+const editTestCase = async(req,res,next)=>{
+  
+  const {tcId,input,output,arraySize} = req.body;
+  console.log(tcId)
+  try{
+  const TestCase = await TestCase.updateOne(
+    {_id : tcId},
+    {
+      input : input ,
+      output : output ,
+      arraySize : arraySize
+    }
+  )
+  console.log(TestCase)
+    res.json({ success: `TestCase successfully updated! ` });
+  }
+  catch(err) {
+    res.send({ message: err });
+  }
+}
+
+const AddTestCaseInQuestion = async(req,res,next)=>{
+  
+  const {qid,input,output ,arraySize} = req.body;
+  try{
+    const testCase = await TestCase.create({
+      Question: qid,
+      input: input,
+      output : output,
+      arraySize : arraySize ? arraySize : null
+    });
+
+    console.log(testCase)
+    
+    res.json({ success: `TestCase successfully created! ` });
+  }
+  catch(err) {
+    res.send({ message: err });
+  }
+}
+
+const deleteAssignment = AsyncHandler(async (req, res, next) => {
+  const assignmentid = req.params.aid;
+  const courseid = req.params.cid;
+  if (!Types.ObjectId.isValid(courseid) || !Types.ObjectId.isValid(assignmentid)) {
+    res.status(400).json({ error: 'Invalid courseid or assignmentid' });
+    return;
+  }
+  try {
+    
+    const deletedAssignment = await Assignment.findOneAndDelete({ _id: assignmentid });
+    if (!deletedAssignment) {
+      res.status(404).json({ error: 'Assignment not found' });
       return;
     }
-    Course.updateOne(
-      { _id: courseid },
-      {
-        $pull: {
-         // assignments: { assignmentID: assignmentid },
-            assignments: { _id: assignmentid } ,
 
-        },
-      },
-      (err, result) => {
-        if (err) {
-          res.status(501);
-          res.json({ error: err });
-          return;
-        }
-      }
-    )
-      const deletedAssignment = await Assignment.findOneAndDelete({ _id: assignmentid });
-      res.status(200);
-      res.json({ success: "Assignment remved from course" });
-  })
+    const relatedQuestions = await Question.find({ Assignment: assignmentid })
+    await Question.deleteMany({ Assignment: assignmentid });
+    const questionIds = relatedQuestions.map((question) => question._id);
+    console.log(questionIds)
+    await TestCase.deleteMany({ Question: { $in: questionIds } });
 
+    res.status(200).json({ success: 'Assignment removed from course' });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
-  const viewSubmittedList = AsyncHandler(
+const deleteQuestion = AsyncHandler(async (req, res, next) => {
+  const questionId = req.params.qid;
+  if ( !Types.ObjectId.isValid(questionId)) {
+    res.status(400).json({ error: 'Invalid questionID' });
+    return;
+  }
+  try {
+    
+    await Question.findByIdAndDelete(questionId);
+    await TestCase.deleteMany({ Question: { $in: questionId } });
+    res.status(200).json({ success: 'question removed from course' });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+const deleteTestCases = AsyncHandler(async (req, res, next) => {
+  const TestCaseId = req.params.tid;
+
+  if ( !Types.ObjectId.isValid(TestCaseId)) {
+    res.status(400).json({ error: 'Invalid TestcaseID' });
+    return;
+  }
+
+  try {
+    await TestCase.findByIdAndDelete(TestCaseId);
+    res.status(200).json({ success: 'TestCase removed from Question' });
+  }
+  catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+const viewSubmittedList = AsyncHandler(
     async(req,res,next)=>{
       const assignmentID = req.body
       const assignment = await Assignment.findById(assignmentID).populate({
@@ -168,7 +302,6 @@ const viewAssignmentList = AsyncHandler(
 
   }
 )
-
 /*const viewAssignment = AsyncHandler(async (req, res, next) => {
   const assignmentId = req.params.aid;
 
@@ -307,6 +440,20 @@ const viewAssignment = AsyncHandler(async (req, res, next) => {
   }
 });
 
+
+
+
 module.exports = {
-  viewAssignment,deleteAssignment,addAssignment,editAssignment,viewAssignmentList,viewSubmittedList
+  viewAssignment,
+  deleteAssignment,
+  addAssignment,
+  editAssignment,
+  viewAssignmentList,
+  viewSubmittedList,
+  editQuestion,
+  editTestCase,
+  addQuestionInAssignment,
+  AddTestCaseInQuestion,
+  deleteQuestion,
+  deleteTestCases
 }
