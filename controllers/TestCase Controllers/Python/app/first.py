@@ -1,2 +1,1 @@
-x = int(input(""))
-print(x+5)
+print('hello first')
