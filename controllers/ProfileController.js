@@ -46,8 +46,9 @@ const getProfie = AsyncHandler(
 )
 const updateProfile = AsyncHandler(async (req, res, next) => {
     try {
-        const {  userName, fullName, email, role,  profilePic, cv } = req.body;
+        const {  userName, fullName, email,   profilePic, cv } = req.body;
 
+        console.log(profilePic)
         const findData = await User.findById(req.user._id);
 
         if (findData) {

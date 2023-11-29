@@ -23,4 +23,8 @@ router.delete('/deleteAssignment/:cid/:aid' , assigController.deleteAssignment)
 router.delete('/deleteQuestion/:qid', assigController.deleteQuestion)
 router.delete('/deleteTestCase/:tid' , assigController.deleteTestCases)
 
+
+//get IDs of submitted Students
+router.get('/getStudentIds/:aid',assigController.getStudentsByAssignmentId)
+
 module.exports = router;
