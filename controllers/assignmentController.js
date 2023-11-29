@@ -10,7 +10,8 @@ const Question = require("../models/question");
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
 const question = require("../models/question");
-
+const Submission = require('../models/submission');
+const { ObjectId } = require('mongoose').Types;
 
 const addAssignment = AsyncHandler(async (req, res, next) => {
   const { questions, assig } = req.body;
@@ -442,6 +443,52 @@ const viewAssignment = AsyncHandler(async (req, res, next) => {
 
 
 
+const getStudentsByAssignmentId = async (req, res) => {
+  try {
+    const assignmentId = req.params.aid;
+
+    // Step 1: Find question IDs associated with the assignment ID
+    const questionIds = await Question.find({ Assignment: assignmentId }).select('_id');
+
+    // Step 2: Find submissions with the obtained question IDs
+    const submissions = await Submission.find({ question: { $in: questionIds } });
+
+    const studentInfoMap = new Map();
+
+    submissions.forEach((submission) => {
+      const studentId = submission.student.toString();
+      const studentName = ''; // You'll fetch the name from the User model in the next step
+      studentInfoMap.set(studentId, studentName);
+    });
+
+    // Convert the Map to an array of objects for the response
+    const studentInfoArray = Array.from(studentInfoMap, ([id, name]) => ({ id, name }));
+
+    // Step 3: Fetch user names based on unique student IDs
+    const uniqueStudentIds = Array.from(studentInfoMap.keys());
+    const userNames = await User.find({ _id: { $in: uniqueStudentIds } }).select('_id fullName');
+
+    // Update the studentInfoMap with actual names
+    userNames.forEach((user) => {
+      const studentId = user._id.toString();
+      const studentName = user.fullName;
+      studentInfoMap.set(studentId, studentName);
+    });
+
+    // Convert the Map to an array of objects for the response
+    const finalStudentInfoArray = Array.from(studentInfoMap, ([id, name]) => ({ id, name }));
+    console.log(finalStudentInfoArray)
+    // Send the result as a response
+    res.json({ studentInfo: finalStudentInfoArray });
+  } catch (error) {
+    console.error("Error fetching student info:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
+
+
 
 module.exports = {
   viewAssignment,
@@ -455,5 +502,6 @@ module.exports = {
   addQuestionInAssignment,
   AddTestCaseInQuestion,
   deleteQuestion,
-  deleteTestCases
+  deleteTestCases,
+  getStudentsByAssignmentId
 }
