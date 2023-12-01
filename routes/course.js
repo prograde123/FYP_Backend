@@ -6,7 +6,10 @@ const Student = require("../models/student")
 const Assignment = require("../models/assignment")
 const Teacher = require("../models/teacher")
 const Submission = require("../models/submission")
+const Question =require('../models/question')
 var mongoose = require("mongoose");
+const PDFDocument = require('pdfkit');
+
 
 //create a new course
 router.post("/addCourse", async function (req, res) {
@@ -549,6 +552,264 @@ router.get('/coursesCountByMonth', async (req, res) => {
     res.json(finalCounts);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+
+
+
+//REPORTS MODULE ROUTES
+
+//report for class grade
+router.get('/report/:assignmentId', async (req, res) => {
+try {
+  const assignmentId = req.params.assignmentId;
+
+  // Fetch assignment details
+  const assignment = await Assignment.findById(assignmentId);
+
+  if (!assignment) {
+    return res.status(404).send('Assignment not found');
+  }
+
+  // Fetch all questions for this assignment
+  const questions = await Question.find({ Assignment: assignmentId });
+
+  // Fetch all submissions for this assignment's questions with nested population
+  const submissions = await Submission.find({ question: { $in: questions.map(q => q._id) } })
+    .populate('student');
+
+  // Calculate total assignment marks based on all questions
+  const totalAssignmentMarks = questions.reduce((total, question) => total + question.questionTotalMarks, 0);
+
+  // Create a map to store each student's obtained marks for the assignment
+  const studentTotals = new Map();
+
+  // Initialize obtained marks for each student as 0 for all questions
+  submissions.forEach(submission => {
+    const studentId = submission.student._id;
+    if (!studentTotals.has(studentId)) {
+      studentTotals.set(studentId, 0);
+    }
+  });
+
+  // Calculate obtained marks for each student
+  submissions.forEach(submission => {
+    const studentId = submission.student._id;
+    studentTotals.set(studentId, studentTotals.get(studentId) + submission.obtainedMarks);
+  });
+
+  // Create a new PDF document
+  const doc = new PDFDocument();
+  const fileName = `Assignment_${assignmentId}_Report.pdf`;
+
+  // Set response headers for PDF file
+  res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+  res.setHeader('Content-Type', 'application/pdf');
+
+  // Pipe the PDF to the response
+  doc.pipe(res);
+
+  doc.fontSize(12).font('Helvetica-Bold').text(`Class Grade Report for Assignment - ${assignment.assignmentNumber}`, { align: 'center' });
+  doc.translate(0, 30);
+  
+  // Display total assignment marks
+  doc.text(`Total Assignment Marks: ${totalAssignmentMarks}`);
+  doc.translate(0, 80);
+
+  // Table header
+  doc.font('Helvetica-Bold').text('Student Name', 100, 50).text('Obtained Marks', 300, 50).text('Grade', 450, 50);
+  doc.moveDown();
+      
+  let currentHeight = 100;
+
+  // Iterate through students and display their obtained marks and grade
+  studentTotals.forEach((obtainedMarks, studentId) => {
+    const student = submissions.find(submission => submission.student._id.equals(studentId)).student;
+    const studentName = student.userName;
+
+    // Calculate percentage and determine grade
+    const percentage = (obtainedMarks / totalAssignmentMarks) * 100;
+            if (percentage >= 90) {
+              grade = 'A';
+            } else if (percentage >= 80) {
+              grade = 'B';
+            } 
+            else if (percentage >= 70) {
+              grade = 'B+';
+            } 
+            else if (percentage >= 60) {
+              grade = 'C';
+            } 
+            else if (percentage >= 55) {
+              grade = 'C+';
+            } 
+            else if (percentage >= 50) {
+              grade = 'D';
+            } 
+            else if (percentage < 50) {
+              grade = 'F';
+            } 
+
+    // Write student details to the PDF
+    doc.font('Helvetica').text(studentName, 100, currentHeight).text(`${obtainedMarks}`, 330, currentHeight).text(grade, 460, currentHeight);
+  
+   currentHeight += 30; 
+  });
+
+  // Finalize the PDF and send the response
+  doc.end();
+} catch (error) {
+  console.error(error);
+  res.status(500).send('Internal Server Error');
+}
+});
+
+//finding courses of teacher for report
+router.get('/courses/:teacherId', async (req, res) => {
+  try {
+    const teacherId = req.params.teacherId;
+    const courses = await Course.find({ teacher: teacherId }).select('name _id'); // Adjust fields as needed
+
+    res.json(courses);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+//finding assignment of the selected course
+router.get('/assignments/:courseId', async (req, res) => {
+  try {
+    const courseId = req.params.courseId;
+    const assignments = await Assignment.find({ CourseID: courseId }).select('assignmentNumber _id'); // Adjust fields as needed
+
+    res.json(assignments);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+//report for individual student
+router.get('/studentReport/:studentId', async (req, res) => {
+  const studentId = req.params.studentId;
+
+  try {
+    // Find the student
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    // Find all submissions of the student
+    const submissions = await Submission.find({ student: studentId }).populate('question');
+
+    // Prepare PDF document
+    const doc = new PDFDocument();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${student.userName}_report.pdf"`);
+
+    doc.pipe(res);
+
+    // Add course title
+    doc.fontSize(18).text('Student Course Report', { align: 'center' }).moveDown();
+
+    // Add student's username
+    doc.fontSize(14).text(`Student: ${student.userName}`, { align: 'left' }).moveDown();
+
+    // Translate to add space
+    doc.translate(0, 30);
+
+    // Add table headers
+    doc.font('Helvetica-Bold');
+    doc.text('Assignment Number', 50, 120).moveUp().text('Questions', 200, 120).moveUp().text('Total Marks', 290, 120).moveUp().text('Obtained Marks', 380, 120).moveUp().text('Grade', 490, 120);
+    doc.font('Helvetica');
+
+  // Calculate total marks and obtained marks
+  let totalObtainedMarks = 0;
+  let totalMaxMarks = 0;
+  let posY = 170; // Initial Y position for table content
+
+  for (const submission of submissions) {
+    const question = submission.question;
+    const assignment = await Assignment.findOne({ _id: question.Assignment });
+
+    if (!assignment) {
+      continue; // Skip this submission if the associated assignment is not found
+    }
+
+    // Calculate total marks for the assignment based on its questions
+    const assignmentQuestions = await Question.find({ Assignment: assignment._id });
+    const assignmentTotalMarks = assignmentQuestions.reduce((total, q) => total + q.questionTotalMarks, 0);
+
+    totalMaxMarks += assignmentTotalMarks;
+    totalObtainedMarks += submission.obtainedMarks;
+
+    // Display assignment details in columns
+    doc.text(`${assignment.assignmentNumber}`, 100, posY)
+      .text(`${assignmentQuestions.length}`, 220, posY)
+      .text(`${assignmentTotalMarks}`, 310, posY)
+      .text(`${submission.obtainedMarks}`, 410, posY);
+
+    // Calculate grade
+    const percentage = (submission.obtainedMarks / assignmentTotalMarks) * 100;
+    let grade = '';
+
+    if (percentage >= 90) {
+      grade = 'A';
+    } else if (percentage >= 80) {
+      grade = 'B';
+    } else if (percentage >= 70) {
+              grade = 'B+';
+            } 
+            else if (percentage >= 60) {
+              grade = 'C';
+            } 
+            else if (percentage >= 55) {
+              grade = 'C+';
+            } 
+            else if (percentage >= 50) {
+              grade = 'D';
+            } 
+            else if (percentage < 50) {
+              grade = 'F';
+            } 
+
+    doc.text(grade, 500, posY);
+    posY += 50; // Increment Y position for the next row
+  }
+
+  // Calculate overall percentage
+  const overallPercentage = (totalObtainedMarks / totalMaxMarks) * 100;
+
+  // Add overall percentage to the report
+  doc.moveDown().text(`Overall Percentage: ${overallPercentage.toFixed(2)}%`, { align: 'center' });
+
+  doc.end();
+} catch (err) {
+  console.error(err);
+  res.status(500).json({ message: 'Server Error' });
+}
+});
+
+//finding students in a course for report
+router.get("/Students/:courseId", async function (req, res) {
+  const courseId = req.params.courseId;
+  try {
+    const course = await Course.findById(courseId).populate('students');
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+    const students = course.students;
+
+    if (!students || students.length === 0) {
+      return res.status(404).json({ message: 'No students found in this course' });
+    }
+    res.status(200).json({ students });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 
