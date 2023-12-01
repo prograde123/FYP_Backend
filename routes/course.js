@@ -562,107 +562,105 @@ router.get('/coursesCountByMonth', async (req, res) => {
 
 //report for class grade
 router.get('/report/:assignmentId', async (req, res) => {
-try {
-  const assignmentId = req.params.assignmentId;
+  try {
+    const assignmentId = req.params.assignmentId;
 
-  // Fetch assignment details
-  const assignment = await Assignment.findById(assignmentId);
+    const assignment = await Assignment.findById(assignmentId);
 
-  if (!assignment) {
-    return res.status(404).send('Assignment not found');
-  }
-
-  // Fetch all questions for this assignment
-  const questions = await Question.find({ Assignment: assignmentId });
-
-  // Fetch all submissions for this assignment's questions with nested population
-  const submissions = await Submission.find({ question: { $in: questions.map(q => q._id) } })
-    .populate('student');
-
-  // Calculate total assignment marks based on all questions
-  const totalAssignmentMarks = questions.reduce((total, question) => total + question.questionTotalMarks, 0);
-
-  // Create a map to store each student's obtained marks for the assignment
-  const studentTotals = new Map();
-
-  // Initialize obtained marks for each student as 0 for all questions
-  submissions.forEach(submission => {
-    const studentId = submission.student._id;
-    if (!studentTotals.has(studentId)) {
-      studentTotals.set(studentId, 0);
+    if (!assignment) {
+      return res.status(404).send('Assignment not found');
     }
-  });
 
-  // Calculate obtained marks for each student
-  submissions.forEach(submission => {
-    const studentId = submission.student._id;
-    studentTotals.set(studentId, studentTotals.get(studentId) + submission.obtainedMarks);
-  });
+    const questions = await Question.find({ Assignment: assignmentId });
 
-  // Create a new PDF document
-  const doc = new PDFDocument();
-  const fileName = `Assignment_${assignmentId}_Report.pdf`;
+    if (questions.length === 0) {
+      return res.status(404).send('No questions found for this assignment');
+    }
 
-  // Set response headers for PDF file
-  res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-  res.setHeader('Content-Type', 'application/pdf');
+    const submissions = await Submission.find({ question: { $in: questions.map(q => q._id) } });
+    const studentIds = [...new Set(submissions.map(submission => submission.student))];
 
-  // Pipe the PDF to the response
-  doc.pipe(res);
+    const studentNames = await Student.find({ userID: { $in: studentIds } });
+    const studentMap = new Map(studentNames.map(student => [student.userID.toString(), student.userName]));
 
-  doc.fontSize(12).font('Helvetica-Bold').text(`Class Grade Report for Assignment - ${assignment.assignmentNumber}`, { align: 'center' });
-  doc.translate(0, 30);
-  
-  // Display total assignment marks
-  doc.text(`Total Assignment Marks: ${totalAssignmentMarks}`);
-  doc.translate(0, 80);
+    const totalAssignmentMarks = questions.reduce((total, question) => total + question.questionTotalMarks, 0);
 
-  // Table header
-  doc.font('Helvetica-Bold').text('Student Name', 100, 50).text('Obtained Marks', 300, 50).text('Grade', 450, 50);
-  doc.moveDown();
-      
-  let currentHeight = 100;
+    const studentTotals = [];
 
-  // Iterate through students and display their obtained marks and grade
-  studentTotals.forEach((obtainedMarks, studentId) => {
-    const student = submissions.find(submission => submission.student._id.equals(studentId)).student;
-    const studentName = student.userName;
+    submissions.forEach(submission => {
+      const studentId = submission.student;
+      const name = studentMap.get(studentId.toString());
+      const obtainedMarks = submission.obtainedMarks;
 
-    // Calculate percentage and determine grade
-    const percentage = (obtainedMarks / totalAssignmentMarks) * 100;
-            if (percentage >= 90) {
-              grade = 'A';
-            } else if (percentage >= 80) {
-              grade = 'B';
-            } 
-            else if (percentage >= 70) {
-              grade = 'B+';
-            } 
-            else if (percentage >= 60) {
-              grade = 'C';
-            } 
-            else if (percentage >= 55) {
-              grade = 'C+';
-            } 
-            else if (percentage >= 50) {
-              grade = 'D';
-            } 
-            else if (percentage < 50) {
-              grade = 'F';
-            } 
+      const existingStudent = studentTotals.find(student => student.studentId === studentId);
 
-    // Write student details to the PDF
-    doc.font('Helvetica').text(studentName, 100, currentHeight).text(`${obtainedMarks}`, 330, currentHeight).text(grade, 460, currentHeight);
-  
-   currentHeight += 30; 
-  });
+      if (!existingStudent) {
+        studentTotals.push({
+          studentId,
+          name,
+          obtainedMarks,
+        });
+      } else {
+        existingStudent.obtainedMarks += obtainedMarks;
+      }
+    });
 
-  // Finalize the PDF and send the response
-  doc.end();
-} catch (error) {
-  console.error(error);
-  res.status(500).send('Internal Server Error');
-}
+    
+    const doc = new PDFDocument();
+    const fileName = `Assignment_${assignmentId}_Report.pdf`;
+
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Type', 'application/pdf');
+
+    doc.pipe(res);
+
+    doc.fontSize(12).font('Helvetica-Bold').text(`Class Grade Report for Assignment - ${assignment.assignmentNumber}`, { align: 'center' });
+    doc.translate(0, 30);
+
+    doc.text(`Total Assignment Marks: ${totalAssignmentMarks}`);
+    doc.translate(0, 80);
+
+    doc.font('Helvetica-Bold').text('Student Name', 100, 50).text('Obtained Marks', 300, 50).text('Grade', 450, 50);
+    doc.moveDown();
+
+    let currentHeight = 100;
+
+    studentTotals.forEach(student => {
+      const { name, obtainedMarks } = student;
+
+      const percentage = (obtainedMarks / totalAssignmentMarks) * 100;
+      let grade = '';
+
+      if (percentage >= 90) {
+        grade = 'A';
+      } else if (percentage >= 80) {
+        grade = 'B';
+      } else if (percentage >= 70) {
+                grade = 'B+';
+              } 
+              else if (percentage >= 60) {
+                grade = 'C';
+              } 
+              else if (percentage >= 55) {
+                grade = 'C+';
+              } 
+              else if (percentage >= 50) {
+                grade = 'D';
+              } 
+              else if (percentage < 50) {
+                grade = 'F';
+              } 
+
+      doc.font('Helvetica').text(name, 100, currentHeight).text(`${obtainedMarks}`, 330, currentHeight).text(grade, 460, currentHeight);
+
+      currentHeight += 30;
+    });
+
+    doc.end();
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
 //finding courses of teacher for report
@@ -813,5 +811,40 @@ router.get("/Students/:courseId", async function (req, res) {
   }
 });
 
+
+router.get('/submissions', async (req, res) => {
+  try {
+    // Fetch submissions with populated student details
+    const submissions = await Submission.find().populate("student")
+
+    res.json(submissions);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+})
+
+router.get('/subs/:assignmentId', async (req, res) => {
+  try {
+    const assignmentId = req.params.assignmentId;
+
+    // Find submissions for a specific assignment ID and populate the student details
+    const submissions = await Submission.find({ assignment: assignmentId })
+    .populate({
+      path: 'student',
+      model: Student,
+      populate: {
+        path: 'userID',
+        model: 'User',
+      },
+    })
+    .exec();
+
+    res.json(submissions);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
 
 module.exports = router;
