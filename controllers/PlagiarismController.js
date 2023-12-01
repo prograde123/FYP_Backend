@@ -112,7 +112,7 @@ const DoesStudentAlreadyCheck = AsyncHandler(async (req, res, next) => {
       const createReport = await PlagairismReport.create({
         Assignment: aid,
         User: req.user._id,
-        Overall_PlagiarismPercentage: Overall_PlagiarismPercentage,
+        Overall_PlagiarismPercentage: Math.round(Overall_PlagiarismPercentage,4),
         Checked_With_No_Of_Submissions : Checked_With_No_Of_Submissions
       });
   
@@ -126,11 +126,41 @@ const DoesStudentAlreadyCheck = AsyncHandler(async (req, res, next) => {
       res.status(500).json({ success: false, message: "Internal Server Error" });
     }
   });
+
+
+  const getReports = AsyncHandler(async (req, res, next) => {
+    const Aid = req.params.aid;
+  
+    try {
+      const plagiarismReports = await PlagairismReport.find({
+        Assignment: Aid,
+      }).populate('User', 'fullName email');
+  
+      if (plagiarismReports.length > 0) {
+        const reportsWithUserDetails = plagiarismReports.map((report) => {
+          const { User, ...rest } = report.toObject();
+          const userDetails = User
+            ? { userId: User._id, fullName: User.fullName, email: User.email }
+            : null;
+          return { ...rest, ...userDetails };
+        });
+          console.log(reportsWithUserDetails)
+        res.status(200).json({ success: true, PlagiarismReports: reportsWithUserDetails });
+      } else {
+        res.status(200).json({ success: false, PlagiarismReports: null });
+      }
+    } catch (error) {
+      res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+  });
+  
+  
   
 
 
   module.exports = {
     DoesStudentAlreadyCheck,
     updateSubmissions,
-    makePlagReport
+    makePlagReport,
+    getReports
   }
