@@ -27,7 +27,6 @@ const Submission = AsyncHandler(async (req, res, next) => {
 
     const results = await Promise.all(promises);
     
-    console.log("i am  " , results)
     const submitted = results.some((hasSubmission) => hasSubmission);
 
     if (submitted) {
@@ -54,8 +53,6 @@ const ReSubmission = AsyncHandler(async (req, res, next) => {
     });
 
     const results = await Promise.all(promises);
-    
-   
     const Resubmitted = results.some((hasSubmission) => hasSubmission);
     console.log(Resubmitted)
     if (Resubmitted) {
@@ -77,20 +74,11 @@ const ReSubmission = AsyncHandler(async (req, res, next) => {
       const questions = await question.find({
         Assignment: assignmentId,
       });
-
-     
-  
       const questionIds = questions.map((q) => q._id);
-  
-      
       const submissions = await submission.find({
         student: student,
         question: { $in: questionIds },
       });
-
-  
-  
-     
      
       const formattedResponse = [];
       
@@ -168,7 +156,7 @@ const ReSubmission = AsyncHandler(async (req, res, next) => {
           .lean();
       
         const totalTestCases = testResults.length;
-        const halfCount = Math.ceil(totalTestCases / 2); // Half of the test cases
+        const halfCount = Math.ceil(totalTestCases / 2); 
       
         // Shuffle the test cases randomly
         const shuffledTestResults = testResults.slice();
@@ -303,7 +291,7 @@ const getGrades = async (req, res, next) => {
             assignmentNumber: assignment.assignmentNumber,
             status: "submitted",
             obtainedMarks : obtainedMarks,
-            totalMarks: assignment.totalMarks,
+            totalMarks: questions.reduce( (total, q) => total + q.questionTotalMarks, 0)
           };
         } else {
           const currentDate = new Date();
@@ -315,7 +303,7 @@ const getGrades = async (req, res, next) => {
               assignmentNumber: assignment.assignmentNumber,
               status: "not submitted",
               obtainedMarks: 0,
-              totalMarks: assignment.totalMarks,
+              totalMarks: questions.reduce( (total, q) => total + q.questionTotalMarks, 0),
             };
           } else {
             // If no submissions and due date hasn't passed yet, assignment is pending
@@ -325,7 +313,7 @@ const getGrades = async (req, res, next) => {
               assignmentNumber: assignment.assignmentNumber,
               status: "pending",
               obtainedMarks: 'yet to be solved',
-              totalMarks: assignment.totalMarks,
+              totalMarks: questions.reduce( (total, q) => total + q.questionTotalMarks, 0),
             };
           }
         }
@@ -337,12 +325,6 @@ const getGrades = async (req, res, next) => {
     next(error);
   }
 };
-
-
-  
-  
-  
-  
 
 module.exports = {
   Submission,

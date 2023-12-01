@@ -1,18 +1,18 @@
 def sort_array():
     size = int(input(""))
-    arr = []
+    Newarray = []
 
-    # Taking array elements as input
+    
     print("Enter the elements of the array:")
     for i in range(size):
         element = int(input(""))
-        arr.append(element)
+        Newarray.append(element)
 
-    # Sorting the array
-    arr.sort()
+    
+    Newarray.sort()
 
-    # Displaying the sorted array
-    print(arr)
+    
+    print(Newarray)
 
-# Calling the function to sort the array
+
 sort_array()

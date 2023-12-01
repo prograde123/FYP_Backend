@@ -1,20 +1,17 @@
-# Diamond pattern
 
-# Reading number of row
-row = int(input(""))
+line = int(input(""))
 
-# Upper part of diamond
-for i in range(1, row+1):
-    for j in range(1,row-i+1):
+
+for a in range(1, line+1):
+    for j in range(1,line-a+1):
         print(" ", end="")
-    for j in range(1, 2*i):
+    for j in range(1, 2*a):
         print("*", end="")
     print()
 
-# Lower part of diamond
-for i in range(row-1,0, -1):
-    for j in range(1,row-i+1):
+for b in range(line-1,0, -1):
+    for l in range(1,line-b+1):
         print(" ", end="")
-    for j in range(1, 2*i):
+    for l in range(1, 2*b):
         print("*", end="")
     print()
