@@ -116,7 +116,45 @@ const updateProfile = AsyncHandler(async (req, res, next) => {
     }
 });
 
+
+const updatePassword = async (req, res, next) => {
+    try {
+      const { previousPass, pass } = req.body;
+       
+      const findData = await User.findById(req.user._id);
+  
+      if (findData) {
+       // const passwordChanged = await findData.changePassword(previousPass, pass);
+  
+        if (await findData.matchPassword(previousPass)) {
+            findData.password = pass
+            const updatedUser = await findData.save()
+          res.status(200).json({
+            message: 'Password changed successfully',
+          });
+        } else {
+            console.log('Invalid Password')
+          // Previous password doesn't match
+          res.status(401).json({
+            message: 'Invalid Password',
+          });
+        }
+      } else {
+        res.status(404).json({ message: "User Not Found" });
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        success: false,
+        message: "Internal Server Error",
+      });
+    }
+  };
+  
+  
+
 module.exports = {
     getProfie,
-    updateProfile
+    updateProfile,
+    updatePassword
 }

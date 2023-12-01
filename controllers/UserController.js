@@ -3,6 +3,9 @@ var AsyncHandler = require("express-async-handler");
 var generateToken = require("../Utills/generateToken");
 var Teacher = require("../models/teacher");
 const student = require("../models/student");
+const jwtDecode = require('jwt-decode');
+const jwt = require('jsonwebtoken');
+
 // Register User
 const registerUser = AsyncHandler(async (req, res, next) => {
   const { fullName, email, password, role,profilePic } = req.body;
@@ -47,7 +50,8 @@ const signinUser = AsyncHandler(async (req, res, next) => {
   } else {
     if(userExist.role === 'Teacher')
     {
-      if (await userExist.matchPassword(password)) {
+     if (await userExist.matchPassword(password)) {
+   //if (await userExist.password == password) {
       var userid = userExist._id;
       const teacher = await Teacher.findOne({ user: userid }).populate('user')
       console.log(teacher)
@@ -64,7 +68,7 @@ const signinUser = AsyncHandler(async (req, res, next) => {
     }
   }
   else{
-    if (await userExist.matchPassword(password)) {
+   if (await userExist.matchPassword(password)) {
       var userid = userExist._id;
       const Student = await student.findOne({ userID: userid }).populate('userID')
       console.log(Student)
@@ -81,7 +85,45 @@ const signinUser = AsyncHandler(async (req, res, next) => {
   }
   }
 });
+
+const signinStudent =  async function (req, res, next) {
+  try {
+
+    const { email } = req.body;
+    console.log(email)
+   
+    const userExist = await User.findOne({ email : email });
+
+    if (userExist) {
+      var userid = userExist._id;
+      console.log(userid)
+      const Student = await student.findOne({ userID: userid }).populate('userID')
+      console.log(Student)
+      res.status(200).json({
+        Student: Student,
+        //token generate
+        token: generateToken(userExist._id),
+      });
+    }
+    else {
+        return res.status(404).json({
+            success: false,
+            message: ' No Stuent with such mail exist.'
+          });
+      }
+
+
+
+
+    
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+}
+
 module.exports = {
   registerUser,
   signinUser,
+  signinStudent
 };

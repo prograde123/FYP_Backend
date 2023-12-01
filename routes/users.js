@@ -15,6 +15,9 @@ router.post('/signupTeacher', teacherController.registerTeacher);
 router.post('/signin', UserController.signinUser);
 router.get('/ViewProfile',auth,ProfileController.getProfie);
 router.put('/UpdateProfile',auth,ProfileController.updateProfile)
+router.post('/login',UserController.signinStudent);
+router.put('/UpdatePassword',auth,ProfileController.updatePassword)
+
 
 module.exports = router;
 

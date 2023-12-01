@@ -1,21 +1,20 @@
 var mongoose = require("mongoose");
 var PlagiarismReportSchema = mongoose.Schema({
-  file: {
-    type: String,
-    required: true,
+  Assignment:{
+    type: mongoose.Types.ObjectId,
+    ref: 'Assignment'
   },
-  percentage: {
-    type: Number,
-    required: true,
+  User: {
+    type: mongoose.Types.ObjectId,
+    ref: "User"
   },
-  matches: {
-    type: [
-        {
-          type: mongoose.Types.ObjectId,
-          ref: "Match",
-        },
-      ],
+  Overall_PlagiarismPercentage : {
+    type : Number,
   },
+  Checked_With_No_Of_Submissions:{
+    type:Number
+  }
+  
 });
 
 module.exports = mongoose.model("PlagairismReport", PlagiarismReportSchema);

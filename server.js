@@ -14,6 +14,7 @@ var usersRouter = require("./routes/users");
 var courseRouter= require("./routes/course")
 var assigRouter = require("./routes/assig")
 var submitRouter = require("./routes/submit")
+var PlagRouter = require("./routes/Plagiarism")
 
 const dburl = 'mongodb+srv://ProGrade123:ProGrade123@fyp.fni3swa.mongodb.net/?retryWrites=true&w=majority';
 mongoose.connect(dburl)
@@ -35,19 +36,18 @@ app.use("/users", usersRouter);
 app.use("/course", courseRouter);
 app.use("/assignment", assigRouter);
 app.use("/submit", submitRouter);
+app.use("/Plagiarism",PlagRouter)
 
-// catch 404 and forward to error handler
 app.use(function (req, res, next) {
   next(createError(404));
 });
 
 // error handler
 app.use(function (err, req, res, next) {
-  // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get("env") === "development" ? err : {};
 
-  // render the error page
+  
   res.status(err.status || 500);
   res.render("error");
 });

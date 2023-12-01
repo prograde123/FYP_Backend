@@ -1,17 +1,7 @@
-def main():
-    try:
-        # Get user input for the array elements
-        array = []
-        for i in range(4):
-            element = int(input(""))
-            array.append(element)
+newarr = []
+for i in range(4):
+    number = int(input(""))
+    newarr.append(number)
+    array_sum = sum(newarr)
 
-        # Calculate the sum of array elements
-        array_sum = sum(array)
-
-        print(array_sum)
-    except ValueError:
-        print("Invalid input. Please enter valid numbers.")
-
-if __name__ == "__main__":
-    main()
+print(array_sum)
