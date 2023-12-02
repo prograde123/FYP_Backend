@@ -581,6 +581,7 @@ router.get('/report/:assignmentId', async (req, res) => {
     const studentIds = [...new Set(submissions.map(submission => submission.student))];
 
     const studentNames = await Student.find({ userID: { $in: studentIds } });
+
     const studentMap = new Map(studentNames.map(student => [student.userID.toString(), student.userName]));
 
     const totalAssignmentMarks = questions.reduce((total, question) => total + question.questionTotalMarks, 0);
@@ -592,18 +593,21 @@ router.get('/report/:assignmentId', async (req, res) => {
       const name = studentMap.get(studentId.toString());
       const obtainedMarks = submission.obtainedMarks;
 
-      const existingStudent = studentTotals.find(student => student.studentId === studentId);
+      const submissionKey = `${studentId}_${submission.assignment}`; // Unique key for a student's submission in an assignment
 
-      if (!existingStudent) {
+      if (!studentTotals.find(student => student.key === submissionKey)) {
         studentTotals.push({
+          key: submissionKey,
           studentId,
           name,
-          obtainedMarks,
+          obtainedMarks: 0,
         });
-      } else {
-        existingStudent.obtainedMarks += obtainedMarks;
       }
+
+      const index = studentTotals.findIndex(student => student.key === submissionKey);
+      studentTotals[index].obtainedMarks += obtainedMarks;
     });
+
 
     
     const doc = new PDFDocument();
@@ -811,40 +815,5 @@ router.get("/Students/:courseId", async function (req, res) {
   }
 });
 
-
-router.get('/submissions', async (req, res) => {
-  try {
-    // Fetch submissions with populated student details
-    const submissions = await Submission.find().populate("student")
-
-    res.json(submissions);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Internal Server Error');
-  }
-})
-
-router.get('/subs/:assignmentId', async (req, res) => {
-  try {
-    const assignmentId = req.params.assignmentId;
-
-    // Find submissions for a specific assignment ID and populate the student details
-    const submissions = await Submission.find({ assignment: assignmentId })
-    .populate({
-      path: 'student',
-      model: Student,
-      populate: {
-        path: 'userID',
-        model: 'User',
-      },
-    })
-    .exec();
-
-    res.json(submissions);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Internal Server Error');
-  }
-});
 
 module.exports = router;
