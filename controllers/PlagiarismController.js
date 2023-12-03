@@ -25,9 +25,9 @@ const DoesStudentAlreadyCheck = AsyncHandler(async (req, res, next) => {
       });
   
       if (plagiarismReport) {
-        res.status(200).json({ success: true, message: "Plagiarism report found." });
+        res.status(200).json({ success: true, message: plagiarismReport });
       } else {
-        res.status(200).json({ success: false, message: "Plagiarism report not found." });
+        res.status(200).json({ success: false, message: null });
       }
     } catch (error) {
       res.status(500).json({ success: false, message: "Internal Server Error" });
