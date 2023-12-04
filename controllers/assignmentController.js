@@ -154,26 +154,31 @@ const editQuestion = AsyncHandler(async(req,res,next)=>{
 })
 
 
-const editTestCase = async(req,res,next)=>{
-  
-  const {tcId,input,output,arraySize} = req.body;
-  console.log(tcId)
-  try{
-  const TestCase = await TestCase.updateOne(
-    {_id : tcId},
-    {
-      input : input ,
-      output : output ,
-      arraySize : arraySize
+const editTestCase = async (req, res, next) => {
+  const { tcId, input, output, arraySize } = req.body;
+
+  try {
+    // Find the TestCase by its ID
+    const testCase = await TestCase.findById(tcId);
+
+    if (!testCase) {
+      return res.status(404).json({ error: 'TestCase not found' });
     }
-  )
-  console.log(TestCase)
-    res.json({ success: `TestCase successfully updated! ` });
+
+    // Update the fields
+    testCase.input = input;
+    testCase.output = output;
+    testCase.arraySize = arraySize;
+
+    // Save the updated TestCase
+    await testCase.save();
+
+    res.json({ success: 'TestCase successfully updated!' });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
   }
-  catch(err) {
-    res.send({ message: err });
-  }
-}
+};
+
 
 const AddTestCaseInQuestion = async(req,res,next)=>{
   
